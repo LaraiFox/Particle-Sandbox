@@ -15,7 +15,6 @@ public class Wall implements ICollidable {
 		this.end = end;
 	}
 
-	@Override
 	public ICollider getCollider() {
 		return null;
 	}

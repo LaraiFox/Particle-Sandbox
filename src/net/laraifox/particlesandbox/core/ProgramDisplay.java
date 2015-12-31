@@ -28,7 +28,7 @@ public class ProgramDisplay {
 
 	private Random random;
 
-	private final int PARTICLE_COUNT = 1024 * 32;
+	private final int PARTICLE_COUNT = 1000 * 50;
 	private World world;
 
 	public ProgramDisplay(String title, float width, float height, boolean fullscreen, boolean vSync) {
@@ -114,7 +114,7 @@ public class ProgramDisplay {
 
 		if (isInitialized) {
 			isRunning = true;
-			gameLoop();
+			this.gameLoop();
 		}
 	}
 
@@ -132,6 +132,8 @@ public class ProgramDisplay {
 		long nanosecondsPerTick = (long) ((float) 1000000000 / (float) tickrate);
 		long nanosecondsPerUpdate = (long) ((float) 1000000000 / (float) updaterate);
 
+		previousDeltaTime -= nanosecondsPerUpdate;
+
 		while (!Display.isCloseRequested() && isRunning) {
 			long currentTime = System.nanoTime();
 
@@ -141,7 +143,7 @@ public class ProgramDisplay {
 				updates = 0;
 				fps = (int) (frames / (1.0f / tickrate));
 				frames = 0;
-				tick();
+				this.tick();
 			}
 
 			if (currentTime - previousUpdate >= nanosecondsPerUpdate) {
