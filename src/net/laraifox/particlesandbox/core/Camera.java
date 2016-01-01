@@ -9,7 +9,7 @@ public class Camera {
 
 	public Camera(Matrix4f projectionMatrix, Vector2f position) {
 		this.projectionMatrix = projectionMatrix;
-		this.position = position;
+		this.setPosition(position);
 	}
 
 	public void translate(float x, float y) {
@@ -21,7 +21,7 @@ public class Camera {
 		Matrix4f viewMatrix = new Matrix4f();
 		viewMatrix.setIdentity();
 		viewMatrix.translate(position.negate(null));
-		
+
 		return Matrix4f.mul(viewMatrix, projectionMatrix, null);
 	}
 
@@ -38,6 +38,6 @@ public class Camera {
 	}
 
 	public void setPosition(Vector2f position) {
-		this.position = position;
+		this.position = new Vector2f(position.getX(), position.getY());
 	}
 }

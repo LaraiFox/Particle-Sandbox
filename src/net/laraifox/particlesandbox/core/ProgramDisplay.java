@@ -28,7 +28,7 @@ public class ProgramDisplay {
 
 	private Random random;
 
-	private final int PARTICLE_COUNT = 1000 * 50;
+	private final int PARTICLE_COUNT = 1000 * 500;
 	private World world;
 
 	public ProgramDisplay(String title, float width, float height, boolean fullscreen, boolean vSync) {

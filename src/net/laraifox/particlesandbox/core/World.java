@@ -13,6 +13,7 @@ import net.laraifox.particlesandbox.collision.Quadtree;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.IRenderObject;
 
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
@@ -21,8 +22,97 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 
 public class World {
+	private class PhysicsThread extends Thread {
+		// public Object syncStartPhysicsObject;
+		// public boolean syncStartPhysicsObjectNotified;
+		// private Object syncFinishPhysicsObject;
+		// private boolean syncFinishPhysicsObjectNotified;
+
+		private int threadIndex;
+
+		// private boolean running;
+
+		public PhysicsThread(int threadIndex) {
+			super("Particle Physics Thread #" + threadIndex);
+
+			// this.syncStartPhysicsObjectNotified = false;
+			// this.syncStartPhysicsObject = new Object();
+			// this.syncFinishPhysicsObjectNotified = false;
+			// this.syncFinishPhysicsObject = new Object();
+
+			this.threadIndex = threadIndex;
+			// this.running = true;
+		}
+
+		public void run() {
+			// while (running) {
+			// synchronized (syncStartPhysicsObject) {
+			// try {
+			// while (!syncStartPhysicsObjectNotified) {
+			// syncStartPhysicsObject.wait();
+			// }
+			// } catch (InterruptedException e) {
+			// e.printStackTrace();
+			// }
+			//
+			// syncStartPhysicsObjectNotified = false;
+			// }
+
+			this.updatePhysics();
+
+			// syncFinishPhysicsObjectNotified = true;
+			// synchronized (syncFinishPhysicsObject) {
+			// syncFinishPhysicsObject.notifyAll();
+			// }
+			// }
+		}
+
+		private void updatePhysics() {
+			if (Mouse.isButtonDown(0) && !Mouse.isButtonDown(1) && !Mouse.isButtonDown(2)) {
+				Vector2f mousePosition = Vector2f.add(camera.getPosition(), new Vector2f(Mouse.getX(), Mouse.getY()), null);
+
+				for (int i = threadIndex; i < particles.length; i += physicsThreads.length) {
+					Vector2f vecToMouse = Vector2f.sub(mousePosition, particles[i].position, null);
+
+					float distance = vecToMouse.length();
+					if (distance != 0.0f) {
+						if (distance < 1.0f) {
+							distance = 1.0f;
+						}
+
+						Vector2f acceleration = (Vector2f) vecToMouse.normalise(null).scale(1.0f / distance);
+
+						particles[i].velocity = Vector2f.add(particles[i].velocity, acceleration, null);
+					}
+				}
+			} else if (Mouse.isButtonDown(1) && !Mouse.isButtonDown(0) && !Mouse.isButtonDown(2)) {
+				Vector2f mousePosition = Vector2f.add(camera.getPosition(), new Vector2f(Mouse.getX(), Mouse.getY()), null);
+
+				for (int i = threadIndex; i < particles.length; i += physicsThreads.length) {
+					Vector2f vecToMouse = Vector2f.sub(mousePosition, particles[i].position, null);
+
+					float distance = vecToMouse.length();
+					if (distance != 0.0f) {
+						if (distance < 1.0f) {
+							distance = 1.0f;
+						}
+
+						Vector2f acceleration = (Vector2f) vecToMouse.normalise(null).scale(-1.0f / distance);
+
+						particles[i].velocity = Vector2f.add(particles[i].velocity, acceleration, null);
+					}
+				}
+			}
+		}
+	}
+
+	private int physicsThreadCount = 8;
+	private PhysicsThread[] physicsThreads;
+
 	private float width, height;
 
+	private final float CAMERA_SPEED = 1.5f;
+	private Vector2f cameraStartPosition;
 	private Camera camera;
 
 	private Quadtree quadtree;
@@ -44,12 +134,19 @@ public class World {
 	public World(float width, float height, int particleCount, Random random) {
 		Particle.setWorld(this);
 
-		this.width = width;
-		this.height = height;
+		this.physicsThreads = new PhysicsThread[physicsThreadCount];
 
-		this.camera = new Camera((Matrix4f) new Matrix4f().setIdentity(), new Vector2f(this.width / 2.0f - width / 2.0f, this.height / 2.0f - height / 2.0f));
+		this.width = width * 1;
+		this.height = height * 1;
 
-		this.quadtree = new Quadtree(new AABBCollider(0, 0, this.width, this.height), 64, 5);
+		this.cameraStartPosition = new Vector2f(this.width / 2.0f - width / 2.0f, this.height / 2.0f - height / 2.0f);
+		this.camera = new Camera((Matrix4f) new Matrix4f().setIdentity(), cameraStartPosition);
+
+		float quadtreeDepth = this.width;
+		if (this.height > this.width)
+			quadtreeDepth = this.height;
+		quadtreeDepth = (float) Math.ceil(Math.sqrt((quadtreeDepth / 100.0f)));
+		this.quadtree = new Quadtree(new AABBCollider(0, 0, this.width, this.height), 100, (int) quadtreeDepth);
 
 		this.particleVBO = GL15.glGenBuffers();
 		this.particleCount = particleCount;
@@ -79,13 +176,39 @@ public class World {
 		this.collidingParticles = new ArrayList<ICollidable>();
 
 		this.setRenderMap(new HashMap<Integer, ArrayList<IRenderObject>>());
+
+		// for (int i = 0; i < physicsThreadCount; i++) {
+		// physicsThreads[i] = new PhysicsThread(i);
+		// physicsThreads[i].start();
+		// }
 	}
+
+	// @Override
+	// public void finalize() {
+	// System.out.println("Starting Thread Shutdown...");
+	// for (int i = 0; i < physicsThreads.length; i++) {
+	// System.out.println("Shutting down thread #" + i);
+	// physicsThreads[i].running = false;
+	// physicsThreads[i].syncFinishPhysicsObjectNotified = true;
+	// synchronized (physicsThreads[i].syncStartPhysicsObject) {
+	// physicsThreads[i].syncStartPhysicsObject.notifyAll();
+	// }
+	//
+	// try {
+	// physicsThreads[i].join(10000);
+	// } catch (InterruptedException e) {
+	// e.printStackTrace();
+	// System.exit(1);
+	// }
+	// System.out.println("    Shutdown complete!");
+	// }
+	// }
 
 	public void update(float delta) {
 		quadtree.clear();
-		for (int i = 0; i < particleCount; i++) {
-			quadtree.insert(particles[i]);
-		}
+		// for (int i = 0; i < particleCount; i++) {
+		// quadtree.insert(particles[i]);
+		// }
 
 		AABBCollider testCollider = new AABBCollider(width / 5 * 2, height / 5 * 2, width / 5, height / 5);
 
@@ -95,7 +218,7 @@ public class World {
 		// }
 		collidingParticles = quadtree.retrieve(testCollider);
 
-		System.out.println(collidingParticles.size());
+		// System.out.println(collidingParticles.size());
 		Iterator<ICollidable> collidingParticlesIterator = collidingParticles.iterator();
 		while (collidingParticlesIterator.hasNext()) {
 			ICollidable collidable = collidingParticlesIterator.next();
@@ -104,8 +227,8 @@ public class World {
 			}
 		}
 
-		System.out.println(collidingParticles.size());
-		System.out.println();
+		// System.out.println(collidingParticles.size());
+		// System.out.println();
 
 		// ArrayList<ArrayList<ICollider>> colliderLists = new ArrayList<ArrayList<ICollider>>();
 		// for (int i = 0; i < 4; i++) {
@@ -180,29 +303,81 @@ public class World {
 		if (Mouse.isButtonDown(2)) {
 			camera.translate(-Mouse.getDX(), -Mouse.getDY());
 		} else {
-			if (Mouse.isButtonDown(0)) {
-				Vector2f mousePosition = Vector2f.add(camera.getPosition(), new Vector2f(Mouse.getX(), Mouse.getY()), null);
-
-				for (int i = 0; i < particleCount; i++) {
-					Vector2f vecToMouse = Vector2f.sub(mousePosition, particles[i].position, null);
-
-					float distance = vecToMouse.length();
-					if (distance != 0.0f) {
-						if (distance < 1.0f) {
-							distance = 1.0f;
-						}
-
-						Vector2f acceleration = (Vector2f) vecToMouse.normalise(null).scale(1.0f / distance);
-
-						particles[i].velocity = Vector2f.add(particles[i].velocity, acceleration, null);
-					}
-				}
+			if (Keyboard.isKeyDown(Keyboard.KEY_DOWN) && !Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+				camera.translate(0.0f, -CAMERA_SPEED);
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_UP) && !Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+				camera.translate(0.0f, CAMERA_SPEED);
 			}
+
+			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT) && !Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+				camera.translate(-CAMERA_SPEED, 0.0f);
+			} else if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT) && !Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+				camera.translate(CAMERA_SPEED, 0.0f);
+			}
+
+			if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD0) && (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL))) {
+				camera.setPosition(cameraStartPosition);
+			}
+		}
+
+		// for (PhysicsThread thread : physicsThreads) {
+		// thread.syncStartPhysicsObjectNotified = true;
+		// synchronized (thread.syncStartPhysicsObject) {
+		// thread.syncStartPhysicsObject.notifyAll();
+		// }
+		// }
+		//
+		// for (PhysicsThread thread : physicsThreads) {
+		// synchronized (thread.syncFinishPhysicsObject) {
+		// try {
+		// while (!thread.syncFinishPhysicsObjectNotified) {
+		// thread.syncFinishPhysicsObject.wait();
+		// }
+		// } catch (InterruptedException e) {
+		// e.printStackTrace();
+		// }
+		//
+		// thread.syncFinishPhysicsObjectNotified = false;
+		// }
+		// }
+
+		for (int i = 0; i < physicsThreadCount; i++) {
+			physicsThreads[i] = new PhysicsThread(i);
+			physicsThreads[i].start();
+		}
+
+		// else {
+		// if (Mouse.isButtonDown(0)) {
+		// Vector2f mousePosition = Vector2f.add(camera.getPosition(), new Vector2f(Mouse.getX(), Mouse.getY()), null);
+		//
+		// for (int i = 0; i < particleCount; i++) {
+		// Vector2f vecToMouse = Vector2f.sub(mousePosition, particles[i].position, null);
+		//
+		// float distance = vecToMouse.length();
+		// if (distance != 0.0f) {
+		// if (distance < 1.0f) {
+		// distance = 1.0f;
+		// }
+		//
+		// Vector2f acceleration = (Vector2f) vecToMouse.normalise(null).scale(1.0f / distance);
+		//
+		// particles[i].velocity = Vector2f.add(particles[i].velocity, acceleration, null);
+		// }
+		// }
+		// }
+		// }
+
+		try {
+			for (int i = 0; i < physicsThreadCount; i++) {
+				physicsThreads[i].join();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 
 		for (int i = 0; i < particleCount; i++) {
 			particles[i].position = Vector2f.add(particles[i].position, (Vector2f) new Vector2f(particles[i].velocity).scale(delta), null);
-			particles[i].velocity = (Vector2f) particles[i].velocity.scale((float) Math.pow(0.99f, delta));
+			particles[i].velocity = (Vector2f) particles[i].velocity.scale((float) Math.pow(0.8f, delta));
 		}
 
 		// ArrayList<IRenderObject> pointList = new ArrayList<IRenderObject>();
@@ -277,8 +452,8 @@ public class World {
 
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, wallVBO);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, wallBuffer, GL15.GL_STREAM_DRAW);
-		GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 4 * 2, 0);
-		GL11.glDrawArrays(GL11.GL_LINES, 0, wallCount);
+		GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 2 * 4, 0);
+		GL11.glDrawArrays(GL11.GL_LINES, 0, wallCount * 2);
 
 		GL20.glDisableVertexAttribArray(0);
 
@@ -292,20 +467,20 @@ public class World {
 		}
 		GL11.glEnd();
 
-//		ArrayList<Float> quadtreeVertices = quadtree.getVertices();
-//		 System.out.println("Vertices = " + (quadtreeVertices.size() / 6));
-//
-//		GL11.glBegin(GL11.GL_LINES);
-//		for (int i = 0; i < quadtreeVertices.size() / 6; i++) {
-//			// System.out.println("    Vertex #" + i + ": Color[" + quadtreeVertices.get(i * 6 + 0) + ", " + quadtreeVertices.get(i * 6 + 1) + ", " +
-//			// quadtreeVertices.get(i * 6 + 2)
-//			// + ", " + quadtreeVertices.get(i * 6 + 3) + "], Position[" + quadtreeVertices.get(i * 6 + 4) + ", " + quadtreeVertices.get(i * 6 + 5) + "]");
-//			GL11.glColor4f(quadtreeVertices.get(i * 6 + 0) * 0.0f, quadtreeVertices.get(i * 6 + 1) * 1.0f, quadtreeVertices.get(i * 6 + 2) * 0.0f,
-//					quadtreeVertices.get(i * 6 + 3) * 1.0f);
-//
-//			GL11.glVertex2f(quadtreeVertices.get(i * 6 + 4), quadtreeVertices.get(i * 6 + 5));
-//		}
-//		GL11.glEnd();
+		// ArrayList<Float> quadtreeVertices = quadtree.getVertices();
+		// System.out.println("Vertices = " + (quadtreeVertices.size() / 6));
+		//
+		// GL11.glBegin(GL11.GL_LINES);
+		// for (int i = 0; i < quadtreeVertices.size() / 6; i++) {
+		// // System.out.println("    Vertex #" + i + ": Color[" + quadtreeVertices.get(i * 6 + 0) + ", " + quadtreeVertices.get(i * 6 + 1) + ", " +
+		// // quadtreeVertices.get(i * 6 + 2)
+		// // + ", " + quadtreeVertices.get(i * 6 + 3) + "], Position[" + quadtreeVertices.get(i * 6 + 4) + ", " + quadtreeVertices.get(i * 6 + 5) + "]");
+		// GL11.glColor4f(quadtreeVertices.get(i * 6 + 0) * 0.0f, quadtreeVertices.get(i * 6 + 1) * 1.0f, quadtreeVertices.get(i * 6 + 2) * 0.0f,
+		// quadtreeVertices.get(i * 6 + 3) * 1.0f);
+		//
+		// GL11.glVertex2f(quadtreeVertices.get(i * 6 + 4), quadtreeVertices.get(i * 6 + 5));
+		// }
+		// GL11.glEnd();
 	}
 
 	private HashMap<Integer, ArrayList<IRenderObject>> getRenderMap() {
