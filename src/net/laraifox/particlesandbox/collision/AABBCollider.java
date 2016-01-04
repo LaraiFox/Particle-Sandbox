@@ -1,9 +1,8 @@
 package net.laraifox.particlesandbox.collision;
 
 import net.laraifox.particlesandbox.core.Transform2D;
+import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.interfaces.ICollider;
-
-import org.lwjgl.util.vector.Vector2f;
 
 public class AABBCollider implements ICollider {
 	private Vector2f position;
@@ -119,6 +118,6 @@ public class AABBCollider implements ICollider {
 	}
 
 	public Vector2f getMax() {
-		return Vector2f.add(position, size, null);
+		return Vector2f.add(position, size);
 	}
 }

@@ -2,10 +2,9 @@ package net.laraifox.particlesandbox.collision;
 
 import java.util.ArrayList;
 
+import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.ICollider;
-
-import org.lwjgl.util.vector.Vector2f;
 
 public class Quadtree {
 	/** The default maximum number of objects that can be present in a node before the node will attempt to subdivide. */

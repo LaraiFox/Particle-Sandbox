@@ -3,7 +3,7 @@ package net.laraifox.particlesandbox.collision;
 import net.laraifox.particlesandbox.core.Transform2D;
 import net.laraifox.particlesandbox.interfaces.ICollider;
 
-import org.lwjgl.util.vector.Vector2f;
+import net.laraifox.particlesandbox.core.Vector2f;
 
 public class CircleCollider implements ICollider {
 	private Vector2f position;

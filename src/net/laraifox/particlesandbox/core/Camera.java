@@ -1,7 +1,6 @@
 package net.laraifox.particlesandbox.core;
 
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector2f;
 
 public class Camera {
 	private Matrix4f projectionMatrix;
@@ -13,16 +12,15 @@ public class Camera {
 	}
 
 	public void translate(float x, float y) {
-		position.x += x;
-		position.y += y;
+		position.add(x, y);
 	}
 
 	public Matrix4f getViewProjectionMatrix() {
 		Matrix4f viewMatrix = new Matrix4f();
 		viewMatrix.setIdentity();
-		viewMatrix.translate(position.negate(null));
+		viewMatrix.translate(Vector2f.negate(position).toLWJGLVector2f());
 
-		return Matrix4f.mul(viewMatrix, projectionMatrix, null);
+		return Matrix4f.mul(projectionMatrix, viewMatrix, null);
 	}
 
 	public Matrix4f getProjectionMatrix() {
@@ -39,5 +37,13 @@ public class Camera {
 
 	public void setPosition(Vector2f position) {
 		this.position = new Vector2f(position.getX(), position.getY());
+	}
+
+	public void setX(float x) {
+		this.position.setX(x);
+	}
+
+	public void setY(float y) {
+		this.position.setY(y);
 	}
 }

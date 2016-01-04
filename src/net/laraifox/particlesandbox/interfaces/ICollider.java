@@ -6,8 +6,7 @@ import net.laraifox.particlesandbox.collision.Collision;
 import net.laraifox.particlesandbox.collision.Line2DCollider;
 import net.laraifox.particlesandbox.collision.Point2DCollider;
 import net.laraifox.particlesandbox.core.Transform2D;
-
-import org.lwjgl.util.vector.Vector2f;
+import net.laraifox.particlesandbox.core.Vector2f;
 
 public interface ICollider {
 	public Collision getCollision(ICollider other);

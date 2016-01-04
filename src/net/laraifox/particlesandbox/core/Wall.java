@@ -1,9 +1,9 @@
 package net.laraifox.particlesandbox.core;
 
+import java.awt.geom.Line2D;
+
 import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.ICollider;
-
-import org.lwjgl.util.vector.Vector2f;
 
 public class Wall implements ICollidable {
 	public static final int SIZE_IN_BYTES = 4 * 4;
@@ -20,7 +20,7 @@ public class Wall implements ICollidable {
 	}
 
 	public Vector2f getNormal() {
-		return null;
+		return Vector2f.subtract(end, start).normalize().cross();
 	}
 
 	public Vector2f getStart() {
@@ -29,6 +29,10 @@ public class Wall implements ICollidable {
 
 	public Vector2f getEnd() {
 		return end;
+	}
+
+	public Line2D getLine2D() {
+		return new Line2D.Float(start.getX(), start.getY(), end.getX(), end.getY());
 	}
 
 }

@@ -1,13 +1,13 @@
 package net.laraifox.particlesandbox.core;
 
-import java.util.Random;
-
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.PixelFormat;
+
+import net.laraifox.particlesandbox.debug.Debugger;
 
 public class ProgramDisplay {
 	private String title;
@@ -26,10 +26,7 @@ public class ProgramDisplay {
 	private int updates, ups;
 	private int frames, fps;
 
-	private Random random;
-
-	private final int PARTICLE_COUNT = 1000 * 500;
-	private World world;
+	private GameManager gameManager;
 
 	public ProgramDisplay(String title, float width, float height, boolean fullscreen, boolean vSync) {
 		this.title = title;
@@ -39,7 +36,7 @@ public class ProgramDisplay {
 		this.isResizable = false;
 		this.isVSyncEnabled = vSync;
 
-		this.pixelFormat = new PixelFormat();
+		this.pixelFormat = new PixelFormat(8, 8, 1, 1, 16, 0, 8, 8, false);
 		this.contextAttribs = new ContextAttribs();
 
 		this.isInitialized = false;
@@ -103,9 +100,9 @@ public class ProgramDisplay {
 	}
 
 	private void initializeVariables() {
-		this.random = new Random();
+		Debugger.initialize(this);
 
-		this.world = new World(width, height, PARTICLE_COUNT, random);
+		this.gameManager = new GameManager(width, height);
 	}
 
 	public final void start() {
@@ -175,14 +172,15 @@ public class ProgramDisplay {
 	}
 
 	private void update(float delta) {
-		world.update(delta);
+		gameManager.update(delta);
+
+		Debugger.update();
 	}
 
 	private void render() {
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-		GL11.glLoadIdentity();
+		gameManager.render();
 
-		world.render();
+		Debugger.render();
 	}
 
 	public final String getTitle() {

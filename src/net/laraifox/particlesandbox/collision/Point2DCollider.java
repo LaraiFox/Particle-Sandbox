@@ -1,9 +1,8 @@
 package net.laraifox.particlesandbox.collision;
 
 import net.laraifox.particlesandbox.core.Transform2D;
+import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.interfaces.ICollider;
-
-import org.lwjgl.util.vector.Vector2f;
 
 public class Point2DCollider implements ICollider {
 	private Vector2f position;
@@ -54,9 +53,9 @@ public class Point2DCollider implements ICollider {
 	}
 
 	public Collision getCollision(AABBCollider other, Vector2f thisVelocity, Vector2f otherVelocity) {
-		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity, null);
+		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity);
 
-		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity, null)).getCollision(other);
+		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity)).getCollision(other);
 	}
 
 	public Collision getCollision(CircleCollider other) {
@@ -65,9 +64,9 @@ public class Point2DCollider implements ICollider {
 	}
 
 	public Collision getCollision(CircleCollider other, Vector2f thisVelocity, Vector2f otherVelocity) {
-		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity, null);
+		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity);
 
-		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity, null)).getCollision(other);
+		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity)).getCollision(other);
 	}
 
 	public Collision getCollision(Line2DCollider other) {
@@ -76,9 +75,9 @@ public class Point2DCollider implements ICollider {
 	}
 
 	public Collision getCollision(Line2DCollider other, Vector2f thisVelocity, Vector2f otherVelocity) {
-		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity, null);
+		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity);
 
-		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity, null)).getCollision(other);
+		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity)).getCollision(other);
 	}
 
 	public Collision getCollision(Point2DCollider other) {
@@ -87,9 +86,9 @@ public class Point2DCollider implements ICollider {
 	}
 
 	public Collision getCollision(Point2DCollider other, Vector2f thisVelocity, Vector2f otherVelocity) {
-		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity, null);
+		Vector2f combinedVelocity = Vector2f.add(thisVelocity, otherVelocity);
 
-		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity, null)).getCollision(other);
+		return new Line2DCollider(position, Vector2f.add(position, combinedVelocity)).getCollision(other);
 	}
 
 	public Vector2f getPosition() {

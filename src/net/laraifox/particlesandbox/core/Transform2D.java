@@ -1,7 +1,5 @@
 package net.laraifox.particlesandbox.core;
 
-import org.lwjgl.util.vector.Vector2f;
-
 public class Transform2D {
 	private Vector2f translation;
 	private float rotation;
