@@ -2,6 +2,7 @@ package net.laraifox.particlesandbox.core;
 
 import java.awt.geom.Line2D;
 
+import net.laraifox.particlesandbox.collision.AABBCollider;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.ICollider;
 
@@ -16,7 +17,7 @@ public class Wall implements ICollidable {
 	}
 
 	public ICollider getCollider() {
-		return null;
+		return new AABBCollider(start, Vector2f.subtract(end, start));
 	}
 
 	public Vector2f getNormal() {

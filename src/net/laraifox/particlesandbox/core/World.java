@@ -74,6 +74,9 @@ public class World {
 
 	private boolean doGlobalGravity;
 
+	private float force = 60.0f;
+	private float threshold = 20.0f;
+
 	private CLContext context;
 	private CLCommandQueue queue;
 	private CLKernel kernel;
@@ -107,7 +110,7 @@ public class World {
 		if (this.height > this.width)
 			quadtreeDepth = this.height;
 		quadtreeDepth = (float) Math.ceil(Math.sqrt((quadtreeDepth / 200.0f)));
-		this.quadtree = new Quadtree(new AABBCollider(0, 0, this.width, this.height), 100, (int) quadtreeDepth);
+		this.quadtree = new Quadtree(new AABBCollider(0, 0, this.width, this.height), 50, (int) quadtreeDepth);
 
 		try {
 			this.shader = new Shader("res/shaders/Particle Basic.vs", "res/shaders/Particle Basic.fs", true);
@@ -132,10 +135,11 @@ public class World {
 
 		this.wallVBO = GL15.glGenBuffers();
 		this.walls = new ArrayList<Wall>();
-		walls.add(new Wall(new Vector2f(0.0f, 0.0f), new Vector2f(this.width, 0.0f)));
-		walls.add(new Wall(new Vector2f(this.width, 0.0f), new Vector2f(this.width, this.height)));
-		walls.add(new Wall(new Vector2f(this.width, this.height), new Vector2f(0.0f, this.height)));
-		walls.add(new Wall(new Vector2f(0.0f, this.height), new Vector2f(0.0f, 0.0f)));
+		final float WALL_INSET = 0.01f;
+		walls.add(new Wall(new Vector2f(WALL_INSET, WALL_INSET), new Vector2f(this.width - WALL_INSET, WALL_INSET)));
+		walls.add(new Wall(new Vector2f(this.width - WALL_INSET, WALL_INSET), new Vector2f(this.width - WALL_INSET, this.height - WALL_INSET)));
+		walls.add(new Wall(new Vector2f(this.width - WALL_INSET, this.height - WALL_INSET), new Vector2f(WALL_INSET, this.height - WALL_INSET)));
+		walls.add(new Wall(new Vector2f(WALL_INSET, this.height - WALL_INSET), new Vector2f(WALL_INSET, WALL_INSET)));
 
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 
@@ -299,10 +303,10 @@ public class World {
 			particle.update();
 		}
 
-		// quadtree.clear();
-		// for (int i = 0; i < particleCount; i++) {
-		// quadtree.insert(particles[i]);
-		// }
+		quadtree.clear();
+		for (int i = 0; i < particleCount; i++) {
+			quadtree.insert(particles[i]);
+		}
 
 		// collidingParticles.clear();
 		// for (ICollidable collidable : particles) {
@@ -325,13 +329,15 @@ public class World {
 		ArrayList<IPhysicsTask> physicsTasks = new ArrayList<IPhysicsTask>();
 
 		if (InputHandler.isButtonDown(0) && !InputHandler.isButtonDown(1)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX(), InputHandler.getMouseY() + camera.getPosition().getY(), 20.0f));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX(), InputHandler.getMouseY() + camera.getPosition().getY(), force, threshold));
 		} else if (InputHandler.isButtonDown(1) && !InputHandler.isButtonDown(0)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX(), InputHandler.getMouseY() + camera.getPosition().getY(), -20.0f));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX(), InputHandler.getMouseY() + camera.getPosition().getY(), -force, threshold));
 		}
 
 		if (walls.size() > 0) {
-			// physicsTasks.add(new EnvironmentCollisionTask(walls));
+			// physicsTasks.add(new EnvironmentCollisionTask(walls, quadtree));
+
+			this.quadtreeCollisionDetection();
 		}
 
 		if (doGlobalGravity) {
@@ -400,6 +406,34 @@ public class World {
 		// collidingParticlesIterator.remove();
 		// }
 		// }
+	}
+
+	private void quadtreeCollisionDetection() {
+		int totalCollisionTests = 0;
+		ArrayList<ICollidable> possibleCollidables = new ArrayList<ICollidable>();
+
+		for (Wall wall : walls) {
+			possibleCollidables = quadtree.retrieve(wall);
+			totalCollisionTests += possibleCollidables.size();
+
+			for (ICollidable collidable : possibleCollidables) {
+				Particle particle = (Particle) collidable;
+
+				if (particle.getVelocityLine2D().intersectsLine(wall.getLine2D())) {
+					Vector2f v = particle.velocity;
+					Vector2f n = new Vector2f(wall.getNormal().normalize());
+					n.setX(Math.abs(n.getX()));
+					n.setY(Math.abs(n.getY()));
+
+					float dot = (float) Vector2f.dot(v, n);
+
+					Vector2f r = Vector2f.subtract(v, Vector2f.scale(n, 2.0f * dot)).scale(0.5f);
+
+					particle.velocity.set(r);
+				}
+			}
+		}
+		System.out.println(totalCollisionTests);
 	}
 
 	private void waitForThreads() {
@@ -546,19 +580,69 @@ public class World {
 		// GL11.glVertex2f(testCollider.getX(), testCollider.getY() + testCollider.getHeight());
 		// GL11.glEnd();
 
-		// ArrayList<Float> quadtreeVertices = quadtree.getVertices();
-		// // System.out.println("Vertices = " + (quadtreeVertices.size() / 6));
-		//
-		// GL11.glBegin(GL11.GL_LINES);
-		// for (int i = 0; i < quadtreeVertices.size() / 6; i++) {
-		// GL11.glColor4f(quadtreeVertices.get(i * 6 + 0) * 0.0f, quadtreeVertices.get(i * 6 + 1) * 1.0f, quadtreeVertices.get(i * 6 + 2) * 0.0f,
-		// quadtreeVertices.get(i * 6 + 3) * 1.0f);
-		//
-		// GL11.glVertex2f(quadtreeVertices.get(i * 6 + 4), quadtreeVertices.get(i * 6 + 5));
-		// }
-		// GL11.glEnd();
+		ArrayList<Float> quadtreeVertices = quadtree.getVertices();
+		// System.out.println("Vertices = " + (quadtreeVertices.size() / 6));
+
+		GL11.glBegin(GL11.GL_LINES);
+		for (int i = 0; i < quadtreeVertices.size() / 6; i++) {
+			GL11.glColor4f(quadtreeVertices.get(i * 6 + 0) * 0.0f, quadtreeVertices.get(i * 6 + 1) * 1.0f, quadtreeVertices.get(i * 6 + 2) * 0.0f,
+					quadtreeVertices.get(i * 6 + 3) * 1.0f);
+
+			GL11.glVertex2f(quadtreeVertices.get(i * 6 + 4), quadtreeVertices.get(i * 6 + 5));
+		}
+		GL11.glEnd();
+
+		this.drawMouseIndicator();
+
+		GL11.glColor3f(0.0f, 1.0f, 1.0f);
+		for (Wall wall : walls) {
+			AABBCollider collider = (AABBCollider) wall.getCollider();
+			Vector2f min = collider.getMin();
+			Vector2f max = collider.getMax();
+
+			GL11.glBegin(GL11.GL_LINE_LOOP);
+			GL11.glVertex2f(min.getX(), min.getY());
+			GL11.glVertex2f(max.getX(), min.getY());
+			GL11.glVertex2f(max.getX(), max.getY());
+			GL11.glVertex2f(min.getX(), max.getY());
+			GL11.glEnd();
+		}
 
 		shader.unbindShader();
+	}
+
+	private void drawMouseIndicator() {
+		float mx = InputHandler.getMouseX() + camera.getPosition().getX();
+		float my = InputHandler.getMouseY() + camera.getPosition().getY();
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+		if (InputHandler.isButtonDown(0) && !InputHandler.isButtonDown(1)) {
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+			GL11.glVertex2f(mx, my);
+			GL11.glColor4f(0.0f, 0.0f, 1.0f, 0.1f);
+		} else if (InputHandler.isButtonDown(1) && !InputHandler.isButtonDown(0)) {
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+			GL11.glVertex2f(mx, my);
+			GL11.glColor4f(1.0f, 0.0f, 0.0f, 0.01f);
+		} else {
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
+			GL11.glVertex2f(mx, my);
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.0f);
+		}
+		for (int i = 0; i < 360; i++) {
+			GL11.glVertex2f((float) (mx + Math.cos(Math.toRadians(i)) * force), (float) (my + Math.sin(Math.toRadians(i)) * force));
+		}
+		GL11.glVertex2f(mx + force, my);
+		GL11.glEnd();
+
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+		GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.0f);
+		GL11.glVertex2f(mx, my);
+		GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+		for (int i = 0; i < 360; i++) {
+			GL11.glVertex2f((float) (mx + Math.cos(Math.toRadians(i)) * threshold), (float) (my + Math.sin(Math.toRadians(i)) * threshold));
+		}
+		GL11.glVertex2f(mx + threshold, my);
+		GL11.glEnd();
 	}
 
 	private HashMap<Integer, ArrayList<IRenderObject>> getRenderMap() {

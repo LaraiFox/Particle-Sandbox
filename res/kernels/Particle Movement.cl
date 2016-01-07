@@ -5,7 +5,13 @@ kernel void main(global float2 *position, global float2 *velocity, global const 
 	const float RHO = 0.01f;
 	const float DRAG_COEFFICIENT = 0.47f;
 	const float PARTICLE_MIN_SPEED = 0.000663f;
+<<<<<<< HEAD
 	const float PARTICLE_REFERENCE_AREA = (float) (M_PI * (PARTICLE_RADIUS * PARTICLE_RADIUS));
+=======
+	const float PARTICLE_REFERENCE_AREA = (float) (MATH_PI * (PARTICLE_RADIUS * PARTICLE_RADIUS));
+	
+	//universalGravity(ID, PARTICLE_COUNT, position, velocity);
+>>>>>>> 9efd1c90acefde055b23dcb4dcd1c6bb67cce766
 	
 	float2 currentVelocity = velocity[ID];
 	float velocityLength = length(currentVelocity);
