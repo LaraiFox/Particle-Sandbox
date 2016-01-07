@@ -31,7 +31,7 @@ kernel void main(global float2 *position, global float2 *velocity, const global 
 	const float PARTICLE_MIN_SPEED = 0.000663f;
 	const float PARTICLE_REFERENCE_AREA = (float) (MATH_PI * (PARTICLE_RADIUS * PARTICLE_RADIUS));
 	
-	// universalGravity(ID, PARTICLE_COUNT, position, velocity);
+	//universalGravity(ID, PARTICLE_COUNT, position, velocity);
 	
 	float2 currentVelocity = velocity[ID];
 	float velocityLength = length(currentVelocity);

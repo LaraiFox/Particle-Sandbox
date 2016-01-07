@@ -8,11 +8,13 @@ public class MouseForceTask implements IPhysicsTask {
 	private float mouseX;
 	private float mouseY;
 	private float force;
+	private float threshold;
 
-	public MouseForceTask(float mouseX, float mouseY, float force) {
+	public MouseForceTask(float mouseX, float mouseY, float force, float threshold) {
 		this.mouseX = mouseX;
 		this.mouseY = mouseY;
 		this.force = force;
+		this.threshold = threshold;
 	}
 
 	@Override
@@ -21,8 +23,8 @@ public class MouseForceTask implements IPhysicsTask {
 
 		float distance = vecToMouse.length();
 		if (distance != 0.0f) {
-			if (distance < 10.0f) {
-				distance = 10.0f;
+			if (distance < threshold) {
+				distance = threshold;
 			}
 
 			Vector2f acceleration = vecToMouse.normalize().scale(force / distance);

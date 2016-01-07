@@ -1,16 +1,16 @@
 package net.laraifox.particlesandbox.collision;
 
 import net.laraifox.particlesandbox.core.Transform2D;
+import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.interfaces.ICollider;
 
-import net.laraifox.particlesandbox.core.Vector2f;
-
 public class Line2DCollider implements ICollider {
-	private Vector2f start, end;
+	private Transform2D transform;
+	private Vector2f size;
 
-	public Line2DCollider(Vector2f start, Vector2f end) {
-		this.start = start;
-		this.end = end;
+	public Line2DCollider(Vector2f position, Vector2f size) {
+		this.transform = new Transform2D(position);
+		this.size = new Vector2f(size);
 	}
 
 	public Collision getCollision(ICollider other) {

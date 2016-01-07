@@ -97,10 +97,11 @@ public class AABBCollider implements ICollider {
 	}
 
 	public boolean contains(Vector2f position) {
-		float xMin = this.getX();
-		float yMin = this.getY();
-		float xMax = this.getX() + this.getWidth();
-		float yMax = this.getY() + this.getHeight();
+		float xMin = Math.min(this.getX(), this.getX() + this.getWidth());
+		float yMin = Math.min(this.getY(), this.getY() + this.getHeight());
+		float xMax = Math.max(this.getX(), this.getX() + this.getWidth());
+		;
+		float yMax = Math.max(this.getY(), this.getY() + this.getHeight());
 
 		if (position.getX() >= xMin && position.getX() <= xMax && position.getY() >= yMin && position.getY() <= yMax) {
 			return true;
@@ -114,10 +115,10 @@ public class AABBCollider implements ICollider {
 	}
 
 	public Vector2f getMin() {
-		return position;
+		return new Vector2f(Math.min(this.getX(), this.getX() + this.getWidth()), Math.min(this.getY(), this.getY() + this.getHeight()));
 	}
 
 	public Vector2f getMax() {
-		return Vector2f.add(position, size);
+		return new Vector2f(Math.max(this.getX(), this.getX() + this.getWidth()), Math.max(this.getY(), this.getY() + this.getHeight()));
 	}
 }

@@ -3,6 +3,7 @@ package net.laraifox.particlesandbox.physicstasks;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 
+import net.laraifox.particlesandbox.collision.Quadtree;
 import net.laraifox.particlesandbox.core.Particle;
 import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.core.Wall;
@@ -10,8 +11,9 @@ import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
 
 public class EnvironmentCollisionTask implements IPhysicsTask {
 	private ArrayList<Wall> walls;
+	private Quadtree quadtree;
 
-	public EnvironmentCollisionTask(ArrayList<Wall> walls) {
+	public EnvironmentCollisionTask(ArrayList<Wall> walls, Quadtree quadtree) {
 		this.walls = walls;
 	}
 
