@@ -113,7 +113,7 @@ public class Shader {
 			String attributeName = attributeLine.substring(attributeLine.indexOf(" ") + 1, attributeLine.length()).trim();
 
 			this.bindAttribLocation(currentAttribIndex, attributeName);
-			System.out.println("Bound attribute '" + attributeName + "' to index: " + currentAttribIndex);
+//			System.out.println("Bound attribute '" + attributeName + "' to index: " + currentAttribIndex);
 			currentAttribIndex++;
 
 			attributeStartLocation = shaderSrc.indexOf(ATTRIBUTE_KEYWORD, attributeStartLocation + ATTRIBUTE_KEYWORD.length());

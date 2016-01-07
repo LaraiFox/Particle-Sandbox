@@ -9,10 +9,14 @@ public final class FileUtils {
 	private FileUtils() {
 	}
 
+	public static String readFile(String filepath) throws IOException {
+		return FileUtils.readFile(new File(filepath));
+	}
+
 	public static String readFile(File file) throws IOException {
 		StringBuilder result = new StringBuilder();
 		BufferedReader fileReader = new BufferedReader(new FileReader(file));
-		
+
 		String line = new String();
 		while ((line = fileReader.readLine()) != null) {
 			result.append(line).append("\n");

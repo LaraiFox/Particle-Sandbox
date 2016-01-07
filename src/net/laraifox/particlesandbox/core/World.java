@@ -10,22 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.opencl.CL10;
-import org.lwjgl.opencl.CLCommandQueue;
-import org.lwjgl.opencl.CLContext;
-import org.lwjgl.opencl.CLDevice;
-import org.lwjgl.opencl.CLKernel;
-import org.lwjgl.opencl.CLMem;
-import org.lwjgl.opencl.CLPlatform;
-import org.lwjgl.opencl.CLProgram;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.vector.Matrix4f;
-
 import net.laraifox.particlesandbox.UtilCL;
 import net.laraifox.particlesandbox.collision.AABBCollider;
 import net.laraifox.particlesandbox.collision.Quadtree;
@@ -33,6 +17,25 @@ import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
 import net.laraifox.particlesandbox.interfaces.IRenderObject;
 import net.laraifox.particlesandbox.physicstasks.MouseForceTask;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.opencl.CL10;
+import org.lwjgl.opencl.CLCommandQueue;
+import org.lwjgl.opencl.CLContext;
+import org.lwjgl.opencl.CLDevice;
+import org.lwjgl.opencl.CLEvent;
+import org.lwjgl.opencl.CLKernel;
+import org.lwjgl.opencl.CLMem;
+import org.lwjgl.opencl.CLPlatform;
+import org.lwjgl.opencl.CLProgram;
+import org.lwjgl.opencl.OpenCLException;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GLContext;
+import org.lwjgl.util.vector.Matrix4f;
 
 public class World {
 	public static final float GRAVITATIONAL_CONSTANT = 0.00006673f;
@@ -191,7 +194,7 @@ public class World {
 	}
 
 	private void setupOpenCL() throws LWJGLException, IOException {
-		CLPlatform platform = CLPlatform.getPlatforms().get(0);
+		CLPlatform platform = CLPlatform.getPlatforms().get(1);
 		List<CLDevice> devices = platform.getDevices(CL10.CL_DEVICE_TYPE_GPU);
 		this.context = CLContext.create(platform, devices, null, null, null);
 		this.queue = CL10.clCreateCommandQueue(context, devices.get(0), CL10.CL_QUEUE_PROFILING_ENABLE, null);
@@ -212,12 +215,13 @@ public class World {
 
 		// Create our program and kernel
 		this.program = CL10.clCreateProgramWithSource(context, source, null);
-		CL10.clBuildProgram(program, devices.get(0), "", null);
-		System.out.println(program.getBuildInfoString(devices.get(0), CL10.CL_PROGRAM_BUILD_LOG));
+		if (CL10.clBuildProgram(program, devices.get(0), "", null) != CL10.CL_SUCCESS) {
+			throw new OpenCLException(program.getBuildInfoString(devices.get(0), CL10.CL_PROGRAM_BUILD_LOG));
+		}
 		// sum has to match a kernel method name in the OpenCL source
 		this.kernel = CL10.clCreateKernel(program, "main", null);
 
-		this.kernel1DGlobalOffset = BufferUtils.createPointerBuffer(3);
+		this.kernel1DGlobalOffset = BufferUtils.createPointerBuffer(1);
 		this.kernel1DGlobalWorkSize = BufferUtils.createPointerBuffer(1);
 		kernel.setArg(0, positionMem);
 		kernel.setArg(1, velocityMem);
@@ -242,6 +246,14 @@ public class World {
 		CL10.clReleaseContext(context);
 	}
 
+	/**
+	 *         <Update Order>
+	 * 1) Check and or handle for user input
+	 * 2) Perform acceleration type tasks (i.e. gravity wells, mouse force, etc.)
+	 * 3) Calculate drag or basic deceleration of particles
+	 * 4) Handle collisions and particle movement (combined into one function)
+	 * 
+	 */
 	public void update(float delta) {
 		if (InputHandler.isKeyPressed(InputHandler.KEY_R) && (InputHandler.isKeyDown(InputHandler.KEY_LCONTROL) || InputHandler.isKeyDown(InputHandler.KEY_RCONTROL))) {
 			this.resetParticles();
