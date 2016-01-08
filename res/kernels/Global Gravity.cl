@@ -1,4 +1,4 @@
-kernel void main(global float2 *position, global float2 *velocity, global const int *PARTICLE_COUNT, global const float *FRAME_DELTA) {
+kernel void main(global float2 *position, global float2 *velocity, global const unsigned int *PARTICLE_COUNT, global const float *FRAME_DELTA) {
 	const unsigned int ID = get_global_id(0);
 
 	const float GRAVITATIONAL_CONSTANT = 0.00006673f;

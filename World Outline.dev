@@ -1,0 +1,40 @@
+- class World {
+	- static constant gravitational_constant : float(0.00006673f)
+	- static constant camera_speed : float(1.5f)
+	
+	- constant width : float
+	- constant height : float
+	
+	- variable physicsThreads : PhysicsThread[]
+	- variable collisionThreads : CollisionThread[]
+	
+	- variable openCLContext : CLContext
+	- variable particleAccelerationKernel : Kernel
+	- variable globalGravityKernel : Kernel
+	- variable fluidDynamicsKernel : Kernel
+	- variable particleBuffer : CLFloatBuffer
+	- variable particleCountBuffer : CLIntBuffer
+	
+	- variable camera : Camera
+	- variable basicShader : Shader
+	- variable textureShader : Shader
+	- variable blurShader : Shader
+	- variable postprocessingFBO : int
+	- variable particleVBO : int
+	- variable wallVBO : int
+	
+	- variable particles : ArrayList<Particle>
+	- variable particleEmitters : ArrayList<ParticleEmitter>
+	- variable particleVoids : ArrayList<ParticleVoid>
+	- variable physicsObjects : ArrayList<ICollidable>
+	- variable gravityWells : ArrayList<GravityWell>
+	
+	- variable mouseForceStrength : float
+	- variable mouseForceThreshold : float
+	
+	- constructor World()
+	
+	- function finalize() : void @Override(Object)
+	- function update(float) : void
+	- function render() : void
+}

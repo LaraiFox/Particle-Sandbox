@@ -7,7 +7,7 @@ import org.lwjgl.opengl.GL11;
 public class GameManager {
 	public static final int THREAD_COUNT = 8;
 
-	private final int PARTICLE_COUNT = (int) (1000 * 10.0);
+	private final int PARTICLE_COUNT = (int) (1000 * 120.0);
 
 	private Random random;
 

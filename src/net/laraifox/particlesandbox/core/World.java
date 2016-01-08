@@ -16,7 +16,11 @@ import net.laraifox.particlesandbox.collision.Quadtree;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
 import net.laraifox.particlesandbox.interfaces.IRenderObject;
+import net.laraifox.particlesandbox.physicstasks.CollisionThread;
+import net.laraifox.particlesandbox.physicstasks.EnvironmentCollisionTask;
 import net.laraifox.particlesandbox.physicstasks.MouseForceTask;
+import net.laraifox.particlesandbox.physicstasks.PhysicsThread;
+import net.laraifox.particlesandbox.physicstasks.QuadtreeSetupTask;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -25,7 +29,6 @@ import org.lwjgl.opencl.CL10;
 import org.lwjgl.opencl.CLCommandQueue;
 import org.lwjgl.opencl.CLContext;
 import org.lwjgl.opencl.CLDevice;
-import org.lwjgl.opencl.CLEvent;
 import org.lwjgl.opencl.CLKernel;
 import org.lwjgl.opencl.CLMem;
 import org.lwjgl.opencl.CLPlatform;
@@ -34,7 +37,7 @@ import org.lwjgl.opencl.OpenCLException;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GLContext;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 
 public class World {
@@ -43,6 +46,7 @@ public class World {
 	public static final float PARTICLE_RADIUS = 2.0f;
 
 	private PhysicsThread[] physicsThreads;
+	private CollisionThread[] collisionThreads;
 
 	private Random random;
 
@@ -92,10 +96,15 @@ public class World {
 	private IntBuffer particleCountBuffer;
 	private FloatBuffer frameDeltaBuffer;
 
+	private Shader testShader;
+	private int framebufferID;
+	private int colorTextureID;
+
 	public World(float width, float height, int particleCount, Random random) {
 		Particle.setWorld(this);
 
 		this.physicsThreads = new PhysicsThread[GameManager.THREAD_COUNT];
+		this.collisionThreads = new CollisionThread[GameManager.THREAD_COUNT];
 
 		this.random = random;
 
@@ -109,11 +118,11 @@ public class World {
 		float quadtreeDepth = this.width;
 		if (this.height > this.width)
 			quadtreeDepth = this.height;
-		quadtreeDepth = (float) Math.ceil(Math.sqrt((quadtreeDepth / 200.0f)));
-		this.quadtree = new Quadtree(new AABBCollider(0, 0, this.width, this.height), 50, (int) quadtreeDepth);
+		quadtreeDepth = (float) Math.ceil(Math.sqrt((quadtreeDepth / 100.0f)));
+		this.quadtree = new Quadtree(new AABBCollider(0, 0, this.width, this.height), 100, (int) quadtreeDepth);
 
 		try {
-			this.shader = new Shader("res/shaders/Particle Basic.vs", "res/shaders/Particle Basic.fs", true);
+			this.shader = new Shader("res/shaders/GLSL 1.2/Particle Basic.vs", "res/shaders/GLSL 1.2/Particle Basic.fs", true);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -165,6 +174,20 @@ public class World {
 			e.printStackTrace();
 			System.exit(1);
 		}
+
+		try {
+			this.testShader = new Shader("res/shaders/glsl 1.2/postprocessing/Gaussian Blur.vs", "res/shaders/glsl 1.2/postprocessing/Gaussian Blur H.fs", true);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		this.framebufferID = GL30.glGenFramebuffers();
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferID);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, colorTextureID);
+		GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, 512, 512, 0, GL11.GL_RGBA, GL11.GL_INT, (java.nio.ByteBuffer) null);
+		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, colorTextureID, 0);
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 	}
 
 	private Matrix4f createProjectionMatrix(float left, float right, float bottom, float top, float near, float far) {
@@ -215,7 +238,7 @@ public class World {
 		CL10.clFinish(queue);
 
 		// Load the source from a resource file
-		String source = UtilCL.getResourceAsString("./res/kernels/Particle Movement.cl");
+		String source = UtilCL.getResourceAsString("./res/kernels/Fluid Dynamics.cl");
 
 		// Create our program and kernel
 		this.program = CL10.clCreateProgramWithSource(context, source, null);
@@ -251,11 +274,8 @@ public class World {
 	}
 
 	/**
-	 *         <Update Order>
-	 * 1) Check and or handle for user input
-	 * 2) Perform acceleration type tasks (i.e. gravity wells, mouse force, etc.)
-	 * 3) Calculate drag or basic deceleration of particles
-	 * 4) Handle collisions and particle movement (combined into one function)
+	 * <Update Order> 1) Check and or handle for user input 2) Perform acceleration type tasks (i.e. gravity wells, mouse force, etc.) 3) Calculate drag or
+	 * basic deceleration of particles 4) Handle collisions and particle movement (combined into one function)
 	 * 
 	 */
 	public void update(float delta) {
@@ -303,11 +323,6 @@ public class World {
 			particle.update();
 		}
 
-		quadtree.clear();
-		for (int i = 0; i < particleCount; i++) {
-			quadtree.insert(particles[i]);
-		}
-
 		// collidingParticles.clear();
 		// for (ICollidable collidable : particles) {
 		// collidingParticles.add(collidable);
@@ -328,6 +343,11 @@ public class World {
 
 		ArrayList<IPhysicsTask> physicsTasks = new ArrayList<IPhysicsTask>();
 
+		if (false) {
+			quadtree.clear();
+			physicsTasks.add(new QuadtreeSetupTask(quadtree));
+		}
+
 		if (InputHandler.isButtonDown(0) && !InputHandler.isButtonDown(1)) {
 			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX(), InputHandler.getMouseY() + camera.getPosition().getY(), force, threshold));
 		} else if (InputHandler.isButtonDown(1) && !InputHandler.isButtonDown(0)) {
@@ -335,9 +355,7 @@ public class World {
 		}
 
 		if (walls.size() > 0) {
-			// physicsTasks.add(new EnvironmentCollisionTask(walls, quadtree));
-
-			this.quadtreeCollisionDetection();
+			physicsTasks.add(new EnvironmentCollisionTask(walls));
 		}
 
 		if (doGlobalGravity) {
@@ -374,6 +392,8 @@ public class World {
 
 		this.waitForThreads();
 
+		// this.quadtreeCollisionDetection();
+
 		frameDeltaBuffer.put(0, delta);
 
 		this.writeCLBuffers();
@@ -387,24 +407,17 @@ public class World {
 
 		CL10.clFinish(queue);
 
-		// quadtree.clear();
-		// for (int i = 0; i < particleCount; i++) {
-		// quadtree.insert(particles[i]);
+		// for (int i = 0; i < GameManager.THREAD_COUNT; i++) {
+		// collisionThreads[i] = new CollisionThread(i, walls, quadtree);
+		// collisionThreads[i].start();
 		// }
 		//
-		// collidingParticles.clear();
-		// for (ICollidable collidable : particles) {
-		// collidingParticles.add(collidable);
+		// try {
+		// for (int i = 0; i < GameManager.THREAD_COUNT; i++) {
+		// collisionThreads[i].join();
 		// }
-		// collidingParticles = quadtree.retrieve(testCollider);
-		//
-		// // System.out.println(collidingParticles.size());
-		// Iterator<ICollidable> collidingParticlesIterator = collidingParticles.iterator();
-		// while (collidingParticlesIterator.hasNext()) {
-		// ICollidable collidable = collidingParticlesIterator.next();
-		// if (!collidable.getCollider().getCollision(testCollider).isColliding()) {
-		// collidingParticlesIterator.remove();
-		// }
+		// } catch (InterruptedException e) {
+		// e.printStackTrace();
 		// }
 	}
 

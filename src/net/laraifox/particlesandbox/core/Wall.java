@@ -32,7 +32,7 @@ public class Wall implements ICollidable {
 		return end;
 	}
 
-	public Line2D getLine2D() {
+	public Line2D.Float getLine2D() {
 		return new Line2D.Float(start.getX(), start.getY(), end.getX(), end.getY());
 	}
 

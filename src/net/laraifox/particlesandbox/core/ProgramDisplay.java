@@ -129,7 +129,7 @@ public class ProgramDisplay {
 		long nanosecondsPerTick = (long) ((float) 1000000000 / (float) tickrate);
 		long nanosecondsPerUpdate = (long) ((float) 1000000000 / (float) updaterate);
 
-		previousDeltaTime -= nanosecondsPerUpdate;
+		previousUpdate -= nanosecondsPerUpdate;
 
 		while (!Display.isCloseRequested() && isRunning) {
 			long currentTime = System.nanoTime();

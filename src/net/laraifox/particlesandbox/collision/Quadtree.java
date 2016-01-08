@@ -56,32 +56,51 @@ public class Quadtree {
 	}
 
 	private Quadtree insert(ICollidable collidable, ICollider collider, Vector2f colliderMin, Vector2f colliderMax) {
-		if (childNodes != null) {
+		if (childNodes != null && hasSplit) {
 			int index = (colliderMax.getX() < this.center.getX() ? 0 : colliderMin.getX() > this.center.getX() ? 1 : -10)
 				+ (colliderMax.getY() < this.center.getY() ? 0 : colliderMin.getY() > this.center.getY() ? 2 : -10);
 
 			if (index < 0 || index > 3) {
-				objects.add(collidable);
+				synchronized (objects) {
+					objects.add(collidable);
+				}
 			} else {
-				return childNodes[index].insert(collidable, collider, colliderMin, colliderMax);
+				synchronized (childNodes) {
+					if (childNodes == null)
+						System.out.println();
+					else if (childNodes[0] == null)
+						System.out.println();
+					else if (childNodes[1] == null)
+						System.out.println();
+					else if (childNodes[2] == null)
+						System.out.println();
+					else if (childNodes[3] == null)
+						System.out.println();
+					return childNodes[index].insert(collidable, collider, colliderMin, colliderMax);
+
+				}
 			}
 
 			return this;
 		}
 
-		if (!hasSplit && this.currentDepth < maxDepth && objects.size() + 1 > maxObjectCount) {
-			this.split();
+		synchronized (objects) {
+			if (!hasSplit && this.currentDepth < maxDepth && objects.size() + 1 > maxObjectCount) {
+				this.split();
 
-			ArrayList<ICollidable> tempList = new ArrayList<ICollidable>(objects);
-			objects.clear();
-			for (ICollidable object : tempList) {
-				ICollider objectCollider = object.getCollider();
-				this.insert(object, objectCollider, objectCollider.getMin(), objectCollider.getMax());
+				ArrayList<ICollidable> tempList = new ArrayList<ICollidable>(objects);
+				objects.clear();
+				for (ICollidable object : tempList) {
+					ICollider objectCollider = object.getCollider();
+					this.insert(object, objectCollider, objectCollider.getMin(), objectCollider.getMax());
+				}
+
+				this.insert(collidable, collider, colliderMin, colliderMax);
+			} else if (hasSplit) {
+				this.insert(collidable, collider, colliderMin, colliderMax);
+			} else {
+				objects.add(collidable);
 			}
-
-			this.insert(collidable, collider, colliderMin, colliderMax);
-		} else {
-			objects.add(collidable);
 		}
 
 		return this;
@@ -122,12 +141,12 @@ public class Quadtree {
 		float halfWidth = width / 2.0f;
 		float halfHeight = height / 2.0f;
 
-		this.hasSplit = true;
 		this.childNodes = new Quadtree[4];
 		childNodes[0] = new Quadtree(childLevel, new AABBCollider(x, y, halfWidth, halfHeight), maxObjectCount, maxDepth);
 		childNodes[1] = new Quadtree(childLevel, new AABBCollider(x + halfWidth, y, halfWidth, halfHeight), maxObjectCount, maxDepth);
 		childNodes[2] = new Quadtree(childLevel, new AABBCollider(x, y + halfHeight, halfWidth, halfHeight), maxObjectCount, maxDepth);
 		childNodes[3] = new Quadtree(childLevel, new AABBCollider(x + halfWidth, y + halfHeight, halfWidth, halfHeight), maxObjectCount, maxDepth);
+		this.hasSplit = true;
 	}
 
 	/**
