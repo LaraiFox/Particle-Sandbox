@@ -17,15 +17,15 @@ public class GlobalGravityTask implements IPhysicsTask {
 		for (Particle otherParticle : particles) {
 			if (otherParticle != particle) {
 				float particleDistanceRadius = particle.position.distanceTo(otherParticle.position) / 2.0f;
-				if (particleDistanceRadius < (World.PARTICLE_RADIUS * 2.0f))
-					particleDistanceRadius = World.PARTICLE_RADIUS * 2.0f;
+				if (particleDistanceRadius < (Particle.PARTICLE_RADIUS * 2.0f))
+					particleDistanceRadius = Particle.PARTICLE_RADIUS * 2.0f;
 
-				float force = (World.GRAVITATIONAL_CONSTANT * World.PARTICLE_MASS * World.PARTICLE_MASS) / (particleDistanceRadius * particleDistanceRadius);
+				float force = (World.GRAVITATIONAL_CONSTANT * Particle.PARTICLE_MASS * Particle.PARTICLE_MASS) / (particleDistanceRadius * particleDistanceRadius);
 
 				Vector2f direction = Vector2f.subtract(otherParticle.position, particle.position).normalize();
 
-				particle.velocity.add(Vector2f.scale(direction, force / World.PARTICLE_MASS));
-				otherParticle.velocity.add(Vector2f.scale(direction, -force / World.PARTICLE_MASS));
+				particle.velocity.add(Vector2f.scale(direction, force / Particle.PARTICLE_MASS));
+				otherParticle.velocity.add(Vector2f.scale(direction, -force / Particle.PARTICLE_MASS));
 			}
 		}
 	}

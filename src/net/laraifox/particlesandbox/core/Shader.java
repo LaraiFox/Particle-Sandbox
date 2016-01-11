@@ -1,13 +1,13 @@
 package net.laraifox.particlesandbox.core;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
@@ -31,7 +31,7 @@ public class Shader {
 
 	private int id;
 
-	public Shader(String vertexFilepath, String fragmentFilepath, boolean bindAttributes) throws Exception {
+	public Shader(String vertexFilepath, String fragmentFilepath, boolean bindAttributes) throws IOException {
 		this.uniforms = new HashMap<String, Integer>();
 
 		this.createShader(vertexFilepath, fragmentFilepath, bindAttributes);
@@ -42,7 +42,7 @@ public class Shader {
 		GL20.glDeleteProgram(id);
 	}
 
-	private int createShader(String vertexFilepath, String fragmentFilepath, boolean bindAttributes) throws Exception {
+	private int createShader(String vertexFilepath, String fragmentFilepath, boolean bindAttributes) throws IOException {
 		this.id = GL20.glCreateProgram();
 
 		int vertexShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER);
@@ -53,7 +53,7 @@ public class Shader {
 		int vertexCompileStatus = GL20.glGetShaderi(vertexShader, GL20.GL_COMPILE_STATUS);
 		if (vertexCompileStatus == GL11.GL_FALSE) {
 			String infoLog = GL20.glGetShaderInfoLog(vertexShader, GL20.glGetShaderi(vertexShader, GL20.GL_INFO_LOG_LENGTH));
-			throw new Exception("Vertex Shader ('" + vertexFilepath + "') failed to compile!\n" + infoLog);
+			throw new RuntimeException("Vertex Shader ('" + vertexFilepath + "') failed to compile!\n" + infoLog);
 		}
 
 		GL20.glAttachShader(id, vertexShader);
@@ -66,7 +66,7 @@ public class Shader {
 		int fragmentCompileStatus = GL20.glGetShaderi(fragmentShader, GL20.GL_COMPILE_STATUS);
 		if (fragmentCompileStatus == GL11.GL_FALSE) {
 			String infoLog = GL20.glGetShaderInfoLog(fragmentShader, GL20.glGetShaderi(fragmentShader, GL20.GL_INFO_LOG_LENGTH));
-			throw new Exception("Fragment Shader ('" + fragmentFilepath + "') failed to compile!\n" + infoLog);
+			throw new RuntimeException("Fragment Shader ('" + fragmentFilepath + "') failed to compile!\n" + infoLog);
 		}
 
 		GL20.glAttachShader(id, fragmentShader);
@@ -76,7 +76,7 @@ public class Shader {
 		int programLinkStatus = GL20.glGetProgrami(id, GL20.GL_LINK_STATUS);
 		if (programLinkStatus == GL11.GL_FALSE) {
 			String infoLog = GL20.glGetProgramInfoLog(fragmentShader, GL20.glGetProgrami(id, GL20.GL_INFO_LOG_LENGTH));
-			throw new Exception("Program ('" + vertexFilepath + "' : '" + fragmentFilepath + "') failed to link!\n" + infoLog);
+			throw new RuntimeException("Program ('" + vertexFilepath + "' : '" + fragmentFilepath + "') failed to link!\n" + infoLog);
 		}
 
 		GL20.glValidateProgram(id);
@@ -113,7 +113,7 @@ public class Shader {
 			String attributeName = attributeLine.substring(attributeLine.indexOf(" ") + 1, attributeLine.length()).trim();
 
 			this.bindAttribLocation(currentAttribIndex, attributeName);
-//			System.out.println("Bound attribute '" + attributeName + "' to index: " + currentAttribIndex);
+			// System.out.println("Bound attribute '" + attributeName + "' to index: " + currentAttribIndex);
 			currentAttribIndex++;
 
 			attributeStartLocation = shaderSrc.indexOf(ATTRIBUTE_KEYWORD, attributeStartLocation + ATTRIBUTE_KEYWORD.length());

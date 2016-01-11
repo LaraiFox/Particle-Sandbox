@@ -2,8 +2,9 @@
 	- static constant gravitational_constant : float(0.00006673f)
 	- static constant camera_speed : float(1.5f)
 	
-	- constant width : float
-	- constant height : float
+	- constant halfWidth : float
+	- constant halfHeight : float
+	- constant random : Random
 	
 	- variable physicsThreads : PhysicsThread[]
 	- variable collisionThreads : CollisionThread[]

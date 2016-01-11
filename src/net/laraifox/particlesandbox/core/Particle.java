@@ -11,7 +11,9 @@ import net.laraifox.particlesandbox.interfaces.IRenderObject;
 public class Particle implements ICollidable, IRenderObject {
 	public static final int SIZE_IN_BYTES = 2 * 4;
 
+	public static final float PARTICLE_MASS = 100.0f;
 	public static final float PARTICLE_MIN_SPEED = 0.000663f;
+	public static final float PARTICLE_RADIUS = 2.0f;
 
 	private static World world;
 
@@ -20,10 +22,8 @@ public class Particle implements ICollidable, IRenderObject {
 
 	private Line2D.Float line;
 
-	public Particle(Random random) {
-		this.position = new Vector2f(random.nextFloat() * world.getWidth(), random.nextFloat() * world.getHeight());
-		// this.position = new Vector2f(random.nextFloat() * world.getWidth() / 5 + world.getWidth() / 5 * 2, random.nextFloat()* world.getHeight() / 5 +
-		// world.getHeight() / 5 * 2);
+	public Particle(float width, float height, Random random) {
+		this.position = new Vector2f((random.nextFloat() * 2.0f - 1.0f) * width, (random.nextFloat() * 2.0f - 1.0f) * height);
 		this.velocity = new Vector2f((random.nextFloat() - 0.5f) * 0.0f, (random.nextFloat() - 0.5f) * 0.0f);
 
 		this.line = new Line2D.Float(position.getX(), position.getY(), position.getX() + velocity.getX(), position.getY() + velocity.getY());
