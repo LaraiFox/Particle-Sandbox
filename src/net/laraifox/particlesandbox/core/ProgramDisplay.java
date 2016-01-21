@@ -36,7 +36,7 @@ public class ProgramDisplay {
 		this.isResizable = false;
 		this.isVSyncEnabled = vSync;
 
-		this.pixelFormat = new PixelFormat(8, 8, 1, 1, 16, 0, 8, 8, false);
+		this.pixelFormat = new PixelFormat(8, 8, 1, 1, 8, 0, 8, 8, false);
 		this.contextAttribs = new ContextAttribs();
 
 		this.isInitialized = false;

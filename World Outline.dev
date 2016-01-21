@@ -1,41 +1,101 @@
-- class World {
-	- static constant gravitational_constant : float(0.00006673f)
-	- static constant camera_speed : float(1.5f)
-	
-	- constant halfWidth : float
-	- constant halfHeight : float
-	- constant random : Random
-	
-	- variable physicsThreads : PhysicsThread[]
-	- variable collisionThreads : CollisionThread[]
-	
-	- variable openCLContext : CLContext
-	- variable particleAccelerationKernel : Kernel
-	- variable globalGravityKernel : Kernel
-	- variable fluidDynamicsKernel : Kernel
-	- variable particleBuffer : CLFloatBuffer
-	- variable particleCountBuffer : CLIntBuffer
-	
-	- variable camera : Camera
-	- variable basicShader : Shader
-	- variable textureShader : Shader
-	- variable blurShader : Shader
-	- variable postprocessingFBO : int
-	- variable particleVBO : int
-	- variable wallVBO : int
-	
-	- variable particles : ArrayList<Particle>
-	- variable particleEmitters : ArrayList<ParticleEmitter>
-	- variable particleVoids : ArrayList<ParticleVoid>
-	- variable physicsObjects : ArrayList<ICollidable>
-	- variable gravityWells : ArrayList<GravityWell>
-	
-	- variable mouseForceStrength : float
-	- variable mouseForceThreshold : float
-	
-	- constructor World()
-	
-	- function finalize() : void @Override(Object)
-	- function update(float) : void
-	- function render() : void
+#particlesandbox.current {
+	- class World {
+		- static constant gravitational_constant : float(0.00006673f)
+		- static constant camera_speed : float(1.5f)
+		
+		- constant halfWidth : float
+		- constant halfHeight : float
+		- constant random : Random
+		
+		- variable physicsThreads : PhysicsThread[]
+		- variable collisionThreads : CollisionThread[]
+		
+		- variable openCLContext : CLContext
+		- variable particleAccelerationKernel : Kernel
+		- variable globalGravityKernel : Kernel
+		- variable fluidDynamicsKernel : Kernel
+		- variable particleBuffer : CLFloatBuffer
+		- variable particleCountBuffer : CLIntBuffer
+		
+		- variable camera : Camera
+		- variable basicShader : Shader
+		- variable textureShader : Shader
+		- variable blurShader : Shader
+		- variable postprocessingFBO : int
+		- variable particleVBO : int
+		- variable wallVBO : int
+		
+		- variable particles : ArrayList<Particle>
+		- variable particleEmitters : ArrayList<ParticleEmitter>
+		- variable particleVoids : ArrayList<ParticleVoid>
+		- variable physicsObjects : ArrayList<ICollidable>
+		- variable gravityWells : ArrayList<GravityWell>
+		- variable wormholes : ArrayList<Wormhole>
+		
+		- variable mouseForceStrength : float
+		- variable mouseForceThreshold : float
+		
+		- constructor World()
+		
+		- function finalize() : void @Override(Object)
+		- function update(float) : void
+		- function render() : void
+	}
+	- class GameObject {
+		- variable position : Transform2D
+	}
+	- class Particle {
+		- static constant particle_mass : float()
+		- static constant particle_radius : float()
+		
+		- variable position : Vector2f
+		- variable velocity : Vector2f
+	}
+}
+#particlesandbox.finalized {
+	- class World [GameScene] {
+		- static constant gravitational_constant : float(0.00006673f)
+		- static constant camera_speed : float(1.5f)
+		
+		- constant halfWidth : float
+		- constant halfHeight : float
+		- constant random : Random
+		
+		- variable physicsThreads : PhysicsThread[]
+		- variable collisionThreads : CollisionThread[]
+		
+		- variable openCLContext : CLContext
+		- variable particleAccelerationKernel : Kernel
+		- variable globalGravityKernel : Kernel
+		- variable fluidDynamicsKernel : Kernel
+		- variable particleBuffer : CLFloatBuffer
+		- variable particleCountBuffer : CLIntBuffer
+		
+		- variable camera : Camera
+		- variable basicShader : Shader
+		- variable textureShader : Shader
+		- variable blurShader : Shader
+		- variable postprocessingFBO : int
+		- variable particleVBO : int
+		- variable wallVBO : int
+		
+		- variable particles : ArrayList<Particle>
+		- variable particleEmitters : ArrayList<ParticleEmitter>
+		- variable particleVoids : ArrayList<ParticleVoid>
+		- variable physicsObjects : ArrayList<ICollidable>
+		- variable gravityWells : ArrayList<GravityWell>
+		- variable wormholes : ArrayList<Wormhole>
+		
+		- variable mouseForceStrength : float
+		- variable mouseForceThreshold : float
+		
+		- constructor World()
+		
+		- function finalize() : void @Override(Object)
+		- function update(float) : void @Override(GameScene)
+		- function render() : void
+	}
+	- class Particle [GameObject] {
+		
+	}
 }

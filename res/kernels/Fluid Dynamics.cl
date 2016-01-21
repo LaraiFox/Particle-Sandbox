@@ -1,11 +1,13 @@
 kernel void main(global float2 *position, global float2 *velocity, global const unsigned int *PARTICLE_COUNT, global const float *FRAME_DELTA) {
 	const unsigned int ID = get_global_id(0);
 	
+	const float MATH_PI = 3.1415926535f;
+	
 	const float PARTICLE_RADIUS = 0.5f;
 	const float RHO = 0.01f;
 	const float DRAG_COEFFICIENT = 0.47f;
 	const float PARTICLE_MIN_SPEED = 0.000663f;
-	const float PARTICLE_REFERENCE_AREA = (float) (M_PI * (PARTICLE_RADIUS * PARTICLE_RADIUS));
+	const float PARTICLE_REFERENCE_AREA = (float) (MATH_PI * (PARTICLE_RADIUS * PARTICLE_RADIUS));
 	
 	float2 currentVelocity = velocity[ID];
 	float velocityLength = length(currentVelocity);
