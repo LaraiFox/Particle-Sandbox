@@ -39,6 +39,26 @@ public class CLFloatBuffer implements ICLDataBuffer {
 		return CL10.clEnqueueReadBuffer(queue, address, blocking_write, offset, buffer, event_wait_list, event);
 	}
 
+	public float get() {
+		return buffer.get();
+	}
+
+	public float get(int i) {
+		return buffer.get(i);
+	}
+
+	public void put(float value) {
+		buffer.put(value);
+	}
+
+	public void put(int i, float value) {
+		buffer.put(i, value);
+	}
+
+	public void rewind() {
+		buffer.rewind();
+	}
+
 	public FloatBuffer getBuffer() {
 		return buffer;
 	}

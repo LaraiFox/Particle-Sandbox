@@ -38,6 +38,26 @@ public class CLIntBuffer implements ICLDataBuffer {
 		return CL10.clEnqueueReadBuffer(queue, address, blocking_write, offset, buffer, event_wait_list, event);
 	}
 
+	public int get() {
+		return buffer.get();
+	}
+
+	public int get(int i) {
+		return buffer.get(i);
+	}
+
+	public void put(int value) {
+		buffer.put(value);
+	}
+
+	public void put(int i, int value) {
+		buffer.put(i, value);
+	}
+
+	public void rewind() {
+		buffer.rewind();
+	}
+
 	public IntBuffer getBuffer() {
 		return buffer;
 	}

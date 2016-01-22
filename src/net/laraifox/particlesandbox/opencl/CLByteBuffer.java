@@ -37,6 +37,26 @@ public class CLByteBuffer implements ICLDataBuffer {
 	public int enqueueReadBuffer(CLCommandQueue queue, int blocking_write, long offset, PointerBuffer event_wait_list, PointerBuffer event) {
 		return CL10.clEnqueueReadBuffer(queue, address, blocking_write, offset, buffer, event_wait_list, event);
 	}
+	
+	public byte get() {
+		return buffer.get();
+	}
+
+	public byte get(int i) {
+		return buffer.get(i);
+	}
+
+	public void put(byte value) {
+		buffer.put(value);
+	}
+
+	public void put(int i, byte value) {
+		buffer.put(i, value);
+	}
+
+	public void rewind() {
+		buffer.rewind();
+	}
 
 	public ByteBuffer getBuffer() {
 		return buffer;

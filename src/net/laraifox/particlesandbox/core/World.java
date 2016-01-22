@@ -4,39 +4,35 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.opencl.CL10;
-import org.lwjgl.opencl.CLCommandQueue;
-import org.lwjgl.opencl.CLContext;
-import org.lwjgl.opencl.CLDevice;
-import org.lwjgl.opencl.CLKernel;
-import org.lwjgl.opencl.CLMem;
-import org.lwjgl.opencl.CLPlatform;
-import org.lwjgl.opencl.CLProgram;
-import org.lwjgl.opencl.OpenCLException;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.vector.Matrix4f;
 
 import net.laraifox.particlesandbox.collision.AABBCollider;
 import net.laraifox.particlesandbox.collision.Quadtree;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
+import net.laraifox.particlesandbox.opencl.CLFloatBuffer;
+import net.laraifox.particlesandbox.opencl.CLIntBuffer;
+import net.laraifox.particlesandbox.opencl.Kernel;
 import net.laraifox.particlesandbox.physicstasks.CollisionThread;
 import net.laraifox.particlesandbox.physicstasks.EnvironmentCollisionTask;
 import net.laraifox.particlesandbox.physicstasks.GlobalGravityTask;
 import net.laraifox.particlesandbox.physicstasks.MouseForceTask;
 import net.laraifox.particlesandbox.physicstasks.PhysicsThread;
 import net.laraifox.particlesandbox.physicstasks.QuadtreeSetupTask;
-import net.laraifox.particlesandbox.utils.FileUtils;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opencl.CL10;
+import org.lwjgl.opencl.CLCommandQueue;
+import org.lwjgl.opencl.CLContext;
+import org.lwjgl.opencl.CLDevice;
+import org.lwjgl.opencl.CLPlatform;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.util.vector.Matrix4f;
 
 public class World {
 	public static final float GRAVITATIONAL_CONSTANT = 0.00006673f;
@@ -51,18 +47,12 @@ public class World {
 
 	private CLContext context;
 	private CLCommandQueue queue;
-	private CLKernel kernel;
-	private CLProgram program;
-	private PointerBuffer kernel1DGlobalOffset;
-	private PointerBuffer kernel1DGlobalWorkSize;
-	private CLMem positionMem;
-	private CLMem velocityMem;
-	private CLMem particleCountMem;
-	private CLMem frameDeltaMem;
-	private FloatBuffer positionBuffer;
-	private FloatBuffer velocityBuffer;
-	private IntBuffer particleCountBuffer;
-	private FloatBuffer frameDeltaBuffer;
+	private Kernel globalGravityKernel;
+	private Kernel fluidDynamicsKernel;
+	private CLFloatBuffer positionBuffer;
+	private CLFloatBuffer velocityBuffer;
+	private CLIntBuffer particleCountBuffer;
+	private CLFloatBuffer frameDeltaBuffer;
 
 	private Vector2f cameraSize;
 	private Camera camera;
@@ -178,46 +168,32 @@ public class World {
 	}
 
 	private void setupOpenCL() throws LWJGLException, IOException {
-		this.positionBuffer = ByteBuffer.allocateDirect(particleCount * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		this.velocityBuffer = ByteBuffer.allocateDirect(particleCount * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		this.particleCountBuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
-		this.frameDeltaBuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-
-		particleCountBuffer.put(0, particleCount);
-
 		CLPlatform platform = CLPlatform.getPlatforms().get(0);
-		List<CLDevice> devices = platform.getDevices(CL10.CL_DEVICE_TYPE_GPU);
+		List<CLDevice> devices = platform.getDevices(CL10.CL_DEVICE_TYPE_CPU);
 		this.context = CLContext.create(platform, devices, null, null, null);
 		this.queue = CL10.clCreateCommandQueue(context, devices.get(0), CL10.CL_QUEUE_PROFILING_ENABLE, null);
 
-		// Allocate memory for our two input buffers and our result buffer
-		this.positionMem = CL10.clCreateBuffer(context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, positionBuffer, null);
-		this.velocityMem = CL10.clCreateBuffer(context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, velocityBuffer, null);
-		this.particleCountMem = CL10.clCreateBuffer(context, CL10.CL_MEM_READ_ONLY | CL10.CL_MEM_COPY_HOST_PTR, particleCountBuffer, null);
-		this.frameDeltaMem = CL10.clCreateBuffer(context, CL10.CL_MEM_READ_ONLY | CL10.CL_MEM_COPY_HOST_PTR, frameDeltaBuffer, null);
-		CL10.clEnqueueWriteBuffer(queue, positionMem, 1, 0, positionBuffer, null, null);
-		CL10.clEnqueueWriteBuffer(queue, velocityMem, 1, 0, velocityBuffer, null, null);
-		CL10.clEnqueueWriteBuffer(queue, particleCountMem, 1, 0, particleCountBuffer, null, null);
-		CL10.clEnqueueWriteBuffer(queue, frameDeltaMem, 1, 0, frameDeltaBuffer, null, null);
+		this.globalGravityKernel = new Kernel(context, devices.get(0), "res/kernels/Global Gravity.cl", 1, null, BufferUtils.createPointerBuffer(1), null);
+		this.fluidDynamicsKernel = new Kernel(context, devices.get(0), "res/kernels/Fluid Dynamics.cl", 1, null, BufferUtils.createPointerBuffer(1), null);
+		this.positionBuffer = new CLFloatBuffer(particleCount * 2, context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, null);
+		this.velocityBuffer = new CLFloatBuffer(particleCount * 2, context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, null);
+		this.particleCountBuffer = new CLIntBuffer(1, context, CL10.CL_MEM_READ_ONLY | CL10.CL_MEM_COPY_HOST_PTR, null);
+		particleCountBuffer.put(0, particleCount);
+		this.frameDeltaBuffer = new CLFloatBuffer(1, context, CL10.CL_MEM_READ_ONLY | CL10.CL_MEM_COPY_HOST_PTR, null);
+		positionBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
+		velocityBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
+		particleCountBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
+		frameDeltaBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
+		globalGravityKernel.setArg(0, positionBuffer);
+		globalGravityKernel.setArg(1, velocityBuffer);
+		globalGravityKernel.setArg(2, particleCountBuffer);
+		globalGravityKernel.setArg(3, frameDeltaBuffer);
+
+		fluidDynamicsKernel.setArg(0, positionBuffer);
+		fluidDynamicsKernel.setArg(1, velocityBuffer);
+		fluidDynamicsKernel.setArg(2, particleCountBuffer);
+		fluidDynamicsKernel.setArg(3, frameDeltaBuffer);
 		CL10.clFinish(queue);
-
-		// Load the source from a resource file
-		String source = FileUtils.readFile("./res/kernels/Fluid Dynamics.cl");
-
-		// Create our program and kernel
-		this.program = CL10.clCreateProgramWithSource(context, source, null);
-		if (CL10.clBuildProgram(program, devices.get(0), "", null) != CL10.CL_SUCCESS) {
-			throw new OpenCLException(program.getBuildInfoString(devices.get(0), CL10.CL_PROGRAM_BUILD_LOG));
-		}
-		// sum has to match a kernel method name in the OpenCL source
-		this.kernel = CL10.clCreateKernel(program, "main", null);
-
-		this.kernel1DGlobalOffset = BufferUtils.createPointerBuffer(1);
-		this.kernel1DGlobalWorkSize = BufferUtils.createPointerBuffer(1);
-		kernel.setArg(0, positionMem);
-		kernel.setArg(1, velocityMem);
-		kernel.setArg(2, particleCountMem);
-		kernel.setArg(3, frameDeltaMem);
 	}
 
 	private void resetParticles() {
@@ -228,10 +204,6 @@ public class World {
 
 	@Override
 	public void finalize() {
-		CL10.clReleaseKernel(kernel);
-		CL10.clReleaseProgram(program);
-		CL10.clReleaseMemObject(positionMem);
-		CL10.clReleaseMemObject(velocityMem);
 		CL10.clReleaseCommandQueue(queue);
 		CL10.clReleaseContext(context);
 	}
@@ -312,11 +284,11 @@ public class World {
 		}
 
 		if (InputHandler.isButtonDown(0) && !InputHandler.isButtonDown(1)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(),
-					InputHandler.getMouseY() + camera.getPosition().getY() - cameraSize.getY(), mouseForceStrength, mouseForceThreshold));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(), InputHandler.getMouseY() + camera.getPosition().getY()
+				- cameraSize.getY(), mouseForceStrength, mouseForceThreshold));
 		} else if (InputHandler.isButtonDown(1) && !InputHandler.isButtonDown(0)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(),
-					InputHandler.getMouseY() + camera.getPosition().getY() - cameraSize.getY(), -mouseForceStrength, mouseForceThreshold));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(), InputHandler.getMouseY() + camera.getPosition().getY()
+				- cameraSize.getY(), -mouseForceStrength, mouseForceThreshold));
 		}
 
 		if (walls.size() > 0) {
@@ -324,7 +296,7 @@ public class World {
 		}
 
 		if (doGlobalGravity) {
-			 physicsTasks.add(new GlobalGravityTask(particles));
+			physicsTasks.add(new GlobalGravityTask(particles));
 		}
 
 		// physicsTasks.add(new ParticleMovementTask(width, height, random));
@@ -425,18 +397,31 @@ public class World {
 	}
 
 	private void runKernel() {
-		int maxWorkSize = positionBuffer.capacity() / 2;
-		for (int i = positionBuffer.capacity() / 2, j = 0; i > 0; i -= maxWorkSize, j += maxWorkSize) {
-			kernel1DGlobalWorkSize.put(0, Math.min(i, maxWorkSize));
+		globalGravityKernel.setGlobalWorkSize(0, particleCount);
+		globalGravityKernel.enqueueNDRangeKernel(queue, null, null);
 
-			kernel1DGlobalOffset.put(0, j);
-			CL10.clEnqueueNDRangeKernel(queue, kernel, 1, kernel1DGlobalOffset, kernel1DGlobalWorkSize, null, null, null);
-		}
+		CL10.clFinish(queue);
+
+		fluidDynamicsKernel.setGlobalWorkSize(0, particleCount);
+		fluidDynamicsKernel.enqueueNDRangeKernel(queue, null, null);
+
+		// CL10.clEnqueueNDRangeKernel(queue, kernel, 1, kernel1DGlobalOffset, kernel1DGlobalWorkSize, null, null, null);
+
+		// int maxWorkSize = positionBuffer.capacity() / 2;
+		// for (int i = positionBuffer.capacity() / 2, j = 0; i > 0; i -= maxWorkSize, j += maxWorkSize) {
+		// kernel1DGlobalWorkSize.put(0, Math.min(i, maxWorkSize));
+		//
+		// kernel1DGlobalOffset.put(0, j);
+		// CL10.clEnqueueNDRangeKernel(queue, kernel, 1, kernel1DGlobalOffset, kernel1DGlobalWorkSize, null, null, null);
+		// }
 	}
 
 	private void readCLBuffers() {
-		CL10.clEnqueueReadBuffer(queue, positionMem, 1, 0, positionBuffer, null, null);
-		CL10.clEnqueueReadBuffer(queue, velocityMem, 1, 0, velocityBuffer, null, null);
+		// CL10.clEnqueueReadBuffer(queue, positionMem, 1, 0, positionBufferCL.getBuffer(), null, null);
+		// CL10.clEnqueueReadBuffer(queue, velocityMem, 1, 0, velocityBufferCL.getBuffer(), null, null);
+
+		positionBuffer.enqueueReadBuffer(queue, 1, 0, null, null);
+		velocityBuffer.enqueueReadBuffer(queue, 1, 0, null, null);
 
 		for (int i = 0; i < particleCount; i++) {
 			particles[i].position.set(positionBuffer.get(i * 2), positionBuffer.get(i * 2 + 1));
@@ -459,8 +444,11 @@ public class World {
 		positionBuffer.rewind();
 		velocityBuffer.rewind();
 
-		CL10.clEnqueueWriteBuffer(queue, positionMem, 1, 0, positionBuffer, null, null);
-		CL10.clEnqueueWriteBuffer(queue, velocityMem, 1, 0, velocityBuffer, null, null);
+		positionBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
+		velocityBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
+
+		// CL10.clEnqueueWriteBuffer(queue, positionMem, 1, 0, positionBuffer, null, null);
+		// CL10.clEnqueueWriteBuffer(queue, velocityMem, 1, 0, velocityBuffer, null, null);
 		// CL10.clEnqueueWriteBuffer(queue, frameDeltaMem, 1, 0, frameDeltaBuffer, null, null);
 	}
 

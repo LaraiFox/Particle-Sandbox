@@ -1,5 +1,5 @@
-kernel void main(global float2 *position, global float2 *velocity, global const unsigned int *PARTICLE_COUNT, global const float *FRAME_DELTA) {
-	const unsigned int ID = get_global_id(0);
+kernel void main(global float2 *position, global float2 *velocity, global const uint *PARTICLE_COUNT, global const float *FRAME_DELTA) {
+	const uint ID = get_global_id(0);
 
 	const float GRAVITATIONAL_CONSTANT = 0.00006673f;
 	const float PARTICLE_MASS = 100.0f;
@@ -7,7 +7,9 @@ kernel void main(global float2 *position, global float2 *velocity, global const 
 	
 	float2 iPosition = position[ID];
 	
-	for (unsigned int j = ID + 1; j < PARTICLE_COUNT[0]; j++) {
+	for (uint j = 0; j < PARTICLE_COUNT[0]; j++) {
+		if (j == ID) continue;
+		
 		float2 jPosition = position[j];
 	
 		float particleDistanceRadius = length(iPosition - jPosition);
@@ -18,6 +20,6 @@ kernel void main(global float2 *position, global float2 *velocity, global const 
 		float2 direction = normalize(jPosition - iPosition);
 
 		velocity[ID] += (direction * (force / PARTICLE_MASS));
-		velocity[j] += (direction * (-force / PARTICLE_MASS));
+		// velocity[j] += (direction * (-force / PARTICLE_MASS));
 	}
 }
