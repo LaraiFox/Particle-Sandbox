@@ -169,7 +169,7 @@ public class World {
 
 	private void setupOpenCL() throws LWJGLException, IOException {
 		CLPlatform platform = CLPlatform.getPlatforms().get(0);
-		List<CLDevice> devices = platform.getDevices(CL10.CL_DEVICE_TYPE_CPU);
+		List<CLDevice> devices = platform.getDevices(CL10.CL_DEVICE_TYPE_GPU);
 		this.context = CLContext.create(platform, devices, null, null, null);
 		this.queue = CL10.clCreateCommandQueue(context, devices.get(0), CL10.CL_QUEUE_PROFILING_ENABLE, null);
 
