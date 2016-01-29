@@ -70,9 +70,14 @@ public class World {
 
 	private boolean doGlobalGravity;
 
-	// private Shader testShader;
 	// private int framebufferID;
 	// private int colorTextureID;
+
+	private boolean renderGlowingParticles = true;
+	private FrameBuffer frameBuffer1;
+	private FrameBuffer frameBuffer2;
+	private Shader blurShaderH;
+	private Shader blurShaderV;
 
 	public World(float width, float height, int particleCount, Random random) throws IOException, LWJGLException {
 		this.halfWidth = width * 1 / 2.0f;
@@ -122,12 +127,18 @@ public class World {
 
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 
-		// try {
-		// this.testShader = new Shader("res/shaders/glsl 1.2/postprocessing/Gaussian Blur.vs", "res/shaders/glsl 1.2/postprocessing/Gaussian Blur H.fs", true);
-		// } catch (Exception e) {
-		// e.printStackTrace();
-		// System.exit(1);
-		// }
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		this.frameBuffer1 = new FrameBuffer((int) width, (int) height);
+		this.frameBuffer2 = new FrameBuffer((int) width, (int) height);
+		try {
+			this.blurShaderH = new Shader("res/shaders/glsl 1.2/postprocessing/Gaussian Blur.vs", "res/shaders/glsl 1.2/postprocessing/Gaussian Blur H.fs", true);
+			this.blurShaderV = new Shader("res/shaders/glsl 1.2/postprocessing/Gaussian Blur.vs", "res/shaders/glsl 1.2/postprocessing/Gaussian Blur V.fs", true);
+			System.out.println("SUCCESS!");
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
 		// this.framebufferID = GL30.glGenFramebuffers();
 		// GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferID);
 		// GL11.glBindTexture(GL11.GL_TEXTURE_2D, colorTextureID);
@@ -453,9 +464,70 @@ public class World {
 	}
 
 	public void render() {
-		basicShader.bindShader();
 		basicShader.setUniform("uViewPojectionMatrix", camera.getViewProjectionMatrix());
 
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		if (renderGlowingParticles) {
+			this.renderParticleGlow();
+		}
+
+		this.renderScene();
+
+		this.drawQuadtreeOutline();
+
+		// this.drawMouseIndicator();
+	}
+
+	private void renderParticleGlow() {
+		frameBuffer1.bindFrameBuffer();
+		GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+
+		this.prepareSceneRender();
+
+		this.renderParticles();
+
+		this.finishSceneRender();
+
+		frameBuffer2.bindFrameBuffer();
+
+		blurShaderH.bindShader();
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+		// testShader.setUniform("uProjectionMatrix", camera.getProjectionMatrix());
+
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		// GL11.glDisable(GL11.GL_TEXTURE_2D);
+
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, frameBuffer1.getTextureID());
+		this.renderTexturedQuad();
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+
+		frameBuffer2.unbindCurrentFrameBuffer();
+
+		blurShaderV.bindShader();
+		// testShader.setUniform("uProjectionMatrix", camera.getProjectionMatrix());
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		// GL11.glDisable(GL11.GL_TEXTURE_2D);
+
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, frameBuffer2.getTextureID());
+		this.renderTexturedQuad();
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+	}
+
+	private void renderScene() {
+		this.prepareSceneRender();
+
+		this.renderParticles();
+		this.renderWalls();
+
+		this.finishSceneRender();
+	}
+
+	private void prepareSceneRender() {
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 
 		GL11.glPointSize(1.0f);
@@ -465,6 +537,10 @@ public class World {
 
 		GL20.glEnableVertexAttribArray(0);
 
+		basicShader.bindShader();
+	}
+
+	private void renderParticles() {
 		/****************************************
 		 * Particle rendering section
 		 */
@@ -479,7 +555,9 @@ public class World {
 		GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, particleBuffer);
 		GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 2 * 4, 0);
 		GL11.glDrawArrays(GL11.GL_POINTS, 0, particleCount);
+	}
 
+	private void renderWalls() {
 		/****************************************
 		 * Wall rendering section
 		 */
@@ -500,14 +578,23 @@ public class World {
 		GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 2 * 4, 0);
 		GL11.glDrawArrays(GL11.GL_LINES, 0, wallCount * 2);
 		GL11.glColor3f(1.0f, 1.0f, 1.0f);
+	}
 
+	private void renderTexturedQuad() {
+		GL11.glBegin(GL11.GL_TRIANGLE_FAN);
+		GL11.glTexCoord2f(0.0f, 0.0f);
+		GL11.glVertex2f(-1.0f, -1.0f);
+		GL11.glTexCoord2f(1.0f, 0.0f);
+		GL11.glVertex2f(1.0f, -1.0f);
+		GL11.glTexCoord2f(1.0f, 1.0f);
+		GL11.glVertex2f(1.0f, 1.0f);
+		GL11.glTexCoord2f(0.0f, 1.0f);
+		GL11.glVertex2f(-1.0f, 1.0f);
+		GL11.glEnd();
+	}
+
+	private void finishSceneRender() {
 		GL20.glDisableVertexAttribArray(0);
-
-		this.drawQuadtreeOutline();
-
-		this.drawMouseIndicator();
-
-		basicShader.unbindShader();
 	}
 
 	private void drawQuadtreeOutline() {

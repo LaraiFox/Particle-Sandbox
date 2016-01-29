@@ -15,6 +15,13 @@ public class Camera {
 		position.add(x, y);
 	}
 
+	public Matrix4f getViewMatrix() {
+		Matrix4f viewMatrix = new Matrix4f();
+		viewMatrix.setIdentity();
+		viewMatrix.translate(Vector2f.negate(position).toLWJGLVector2f());
+		return viewMatrix;
+	}
+
 	public Matrix4f getViewProjectionMatrix() {
 		Matrix4f viewMatrix = new Matrix4f();
 		viewMatrix.setIdentity();
