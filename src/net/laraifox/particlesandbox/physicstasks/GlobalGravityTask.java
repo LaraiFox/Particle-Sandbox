@@ -1,14 +1,16 @@
 package net.laraifox.particlesandbox.physicstasks;
 
+import java.util.ArrayList;
+
 import net.laraifox.particlesandbox.core.Particle;
 import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.core.World;
 import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
 
 public class GlobalGravityTask implements IPhysicsTask {
-	private Particle[] particles;
+	private ArrayList<Particle> particles;
 
-	public GlobalGravityTask(Particle[] particles) {
+	public GlobalGravityTask(ArrayList<Particle> particles) {
 		this.particles = particles;
 	}
 

@@ -21,7 +21,7 @@ public class MouseForceTask implements IPhysicsTask {
 	public void performTask(Particle particle) {
 		Vector2f vecToMouse = Vector2f.subtract(new Vector2f(mouseX, mouseY), particle.position);
 
-		float distance = vecToMouse.length();
+		float distance = vecToMouse.lengthSq();
 		if (distance != 0.0f) {
 			if (distance < threshold) {
 				distance = threshold;

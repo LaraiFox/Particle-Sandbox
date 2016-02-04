@@ -13,12 +13,12 @@ public class PhysicsThread extends Thread {
 	// private boolean syncFinishPhysicsObjectNotified;
 
 	private int threadIndex;
-	private Particle[] particles;
+	private ArrayList<Particle> particles;
 	private ArrayList<IPhysicsTask> physicsTasks;
 
 	// private boolean running;
 
-	public PhysicsThread(int threadIndex, Particle[] particles, ArrayList<IPhysicsTask> physicsTasks) {
+	public PhysicsThread(int threadIndex, ArrayList<Particle> particles, ArrayList<IPhysicsTask> physicsTasks) {
 		super("Particle Physics Thread #" + threadIndex);
 
 		// this.syncStartPhysicsObjectNotified = false;
@@ -46,9 +46,9 @@ public class PhysicsThread extends Thread {
 		// syncStartPhysicsObjectNotified = false;
 		// }
 
-		for (int i = threadIndex; i < particles.length; i += GameManager.THREAD_COUNT) {
+		for (int i = threadIndex; i < particles.size(); i += GameManager.THREAD_COUNT) {
 			for (IPhysicsTask task : physicsTasks) {
-				task.performTask(particles[i]);
+				task.performTask(particles.get(i));
 			}
 		}
 

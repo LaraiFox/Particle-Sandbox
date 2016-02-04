@@ -22,6 +22,13 @@ public class Particle implements ICollidable, IRenderObject {
 
 	private Line2D.Float line;
 
+	public Particle(Vector2f position, Vector2f velocity) {
+		this.position = position;
+		this.velocity = velocity;
+
+		this.line = new Line2D.Float(position.getX(), position.getY(), position.getX() + velocity.getX(), position.getY() + velocity.getY());
+	}
+
 	public Particle(float width, float height, Random random) {
 		this.position = new Vector2f((random.nextFloat() * 2.0f - 1.0f) * width, (random.nextFloat() * 2.0f - 1.0f) * height);
 		this.velocity = new Vector2f((random.nextFloat() - 0.5f) * 0.0f, (random.nextFloat() - 0.5f) * 0.0f);

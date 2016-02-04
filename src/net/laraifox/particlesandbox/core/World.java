@@ -8,6 +8,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opencl.CL10;
+import org.lwjgl.opencl.CLCommandQueue;
+import org.lwjgl.opencl.CLContext;
+import org.lwjgl.opencl.CLDevice;
+import org.lwjgl.opencl.CLPlatform;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.util.vector.Matrix4f;
+
 import net.laraifox.particlesandbox.collision.AABBCollider;
 import net.laraifox.particlesandbox.collision.Quadtree;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
@@ -22,23 +34,12 @@ import net.laraifox.particlesandbox.physicstasks.MouseForceTask;
 import net.laraifox.particlesandbox.physicstasks.PhysicsThread;
 import net.laraifox.particlesandbox.physicstasks.QuadtreeSetupTask;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.opencl.CL10;
-import org.lwjgl.opencl.CLCommandQueue;
-import org.lwjgl.opencl.CLContext;
-import org.lwjgl.opencl.CLDevice;
-import org.lwjgl.opencl.CLPlatform;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.vector.Matrix4f;
-
 public class World {
 	public static final float GRAVITATIONAL_CONSTANT = 0.00006673f;
 	private static final float CAMERA_SPEED = 1.5f;
 
 	private final float halfWidth, halfHeight;
+	private final int maxParticleCount;
 	private final int particleCount;
 	private final Random random;
 
@@ -60,7 +61,8 @@ public class World {
 	private int particleVBO;
 	private int wallVBO;
 
-	private Particle[] particles;
+	private ArrayList<Particle> particles;
+	private ArrayList<ParticleEmitter> particleEmitters;
 	private ArrayList<Wall> walls;
 
 	private Quadtree quadtree;
@@ -73,7 +75,7 @@ public class World {
 	// private int framebufferID;
 	// private int colorTextureID;
 
-	private boolean renderGlowingParticles = true;
+	private boolean renderGlowingParticles;
 	private FrameBuffer frameBuffer1;
 	private FrameBuffer frameBuffer2;
 	private Shader blurShaderH;
@@ -82,6 +84,7 @@ public class World {
 	public World(float width, float height, int particleCount, Random random) throws IOException, LWJGLException {
 		this.halfWidth = width * 1 / 2.0f;
 		this.halfHeight = height * 1 / 2.0f;
+		this.maxParticleCount = 100000;
 		this.particleCount = particleCount;
 		this.random = random;
 
@@ -96,7 +99,8 @@ public class World {
 		this.particleVBO = GL15.glGenBuffers();
 		this.wallVBO = GL15.glGenBuffers();
 
-		this.particles = new Particle[particleCount];
+		this.particles = new ArrayList<Particle>();
+		this.particleEmitters = new ArrayList<ParticleEmitter>();
 		this.walls = new ArrayList<Wall>();
 
 		float quadtreeDepth = this.halfWidth;
@@ -108,12 +112,12 @@ public class World {
 		this.mouseForceStrength = 60.0f;
 		this.mouseForceThreshold = 20.0f;
 
-		FloatBuffer buffer = ByteBuffer.allocateDirect(4 * particleCount * 2).order(ByteOrder.nativeOrder()).asFloatBuffer();
+		FloatBuffer buffer = ByteBuffer.allocateDirect(4 * maxParticleCount * 2).order(ByteOrder.nativeOrder()).asFloatBuffer();
 		for (int i = 0; i < particleCount; i++) {
-			particles[i] = new Particle(halfWidth, halfHeight, random);
+			this.addParticle(new Particle(halfWidth, halfHeight, random));
 
-			buffer.put(particles[i].position.getX());
-			buffer.put(particles[i].position.getY());
+			buffer.put(particles.get(i).position.getX());
+			buffer.put(particles.get(i).position.getY());
 		}
 		buffer.flip();
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, particleVBO);
@@ -186,10 +190,9 @@ public class World {
 
 		this.globalGravityKernel = new Kernel(context, devices.get(0), "res/kernels/Global Gravity.cl", 1, null, BufferUtils.createPointerBuffer(1), null);
 		this.fluidDynamicsKernel = new Kernel(context, devices.get(0), "res/kernels/Fluid Dynamics.cl", 1, null, BufferUtils.createPointerBuffer(1), null);
-		this.positionBuffer = new CLFloatBuffer(particleCount * 2, context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, null);
-		this.velocityBuffer = new CLFloatBuffer(particleCount * 2, context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, null);
+		this.positionBuffer = new CLFloatBuffer(maxParticleCount * 2, context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, null);
+		this.velocityBuffer = new CLFloatBuffer(maxParticleCount * 2, context, CL10.CL_MEM_READ_WRITE | CL10.CL_MEM_COPY_HOST_PTR, null);
 		this.particleCountBuffer = new CLIntBuffer(1, context, CL10.CL_MEM_READ_ONLY | CL10.CL_MEM_COPY_HOST_PTR, null);
-		particleCountBuffer.put(0, particleCount);
 		this.frameDeltaBuffer = new CLFloatBuffer(1, context, CL10.CL_MEM_READ_ONLY | CL10.CL_MEM_COPY_HOST_PTR, null);
 		positionBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
 		velocityBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
@@ -208,8 +211,9 @@ public class World {
 	}
 
 	private void resetParticles() {
+		particles.clear();
 		for (int i = 0; i < particleCount; i++) {
-			particles[i] = new Particle(halfWidth, halfHeight, random);
+			this.addParticle(new Particle(halfWidth, halfHeight, random));
 		}
 	}
 
@@ -261,8 +265,21 @@ public class World {
 			}
 		}
 
+		if (InputHandler.isKeyPressed(InputHandler.KEY_E)) {
+			particleEmitters.add(new ParticleEmitter(new Transform2D(Vector2f.add(InputHandler.getMousePosition(), camera.getPosition()).subtract(cameraSize)), 1.0f, 5.0f, 5.0f,
+					this, random));
+		}
+
 		if (InputHandler.isKeyPressed(InputHandler.KEY_U)) {
 			doGlobalGravity = !doGlobalGravity;
+		}
+
+		if (InputHandler.isKeyPressed(InputHandler.KEY_F5)) {
+			renderGlowingParticles = !renderGlowingParticles;
+		}
+
+		for (ParticleEmitter emitter : particleEmitters) {
+			emitter.update(delta);
 		}
 
 		for (Particle particle : particles) {
@@ -295,11 +312,11 @@ public class World {
 		}
 
 		if (InputHandler.isButtonDown(0) && !InputHandler.isButtonDown(1)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(), InputHandler.getMouseY() + camera.getPosition().getY()
-				- cameraSize.getY(), mouseForceStrength, mouseForceThreshold));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(),
+					InputHandler.getMouseY() + camera.getPosition().getY() - cameraSize.getY(), mouseForceStrength, mouseForceThreshold));
 		} else if (InputHandler.isButtonDown(1) && !InputHandler.isButtonDown(0)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(), InputHandler.getMouseY() + camera.getPosition().getY()
-				- cameraSize.getY(), -mouseForceStrength, mouseForceThreshold));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(),
+					InputHandler.getMouseY() + camera.getPosition().getY() - cameraSize.getY(), -mouseForceStrength, mouseForceThreshold));
 		}
 
 		if (walls.size() > 0) {
@@ -312,27 +329,6 @@ public class World {
 
 		// physicsTasks.add(new ParticleMovementTask(width, height, random));
 
-		// for (PhysicsThread thread : physicsThreads) {
-		// thread.syncStartPhysicsObjectNotified = true;
-		// synchronized (thread.syncStartPhysicsObject) {
-		// thread.syncStartPhysicsObject.notifyAll();
-		// }
-		// }
-		//
-		// for (PhysicsThread thread : physicsThreads) {
-		// synchronized (thread.syncFinishPhysicsObject) {
-		// try {
-		// while (!thread.syncFinishPhysicsObjectNotified) {
-		// thread.syncFinishPhysicsObject.wait();
-		// }
-		// } catch (InterruptedException e) {
-		// e.printStackTrace();
-		// }
-		//
-		// thread.syncFinishPhysicsObjectNotified = false;
-		// }
-		// }
-
 		for (int i = 0; i < GameManager.THREAD_COUNT; i++) {
 			physicsThreads[i] = new PhysicsThread(i, particles, physicsTasks);
 			physicsThreads[i].start();
@@ -344,14 +340,11 @@ public class World {
 
 		frameDeltaBuffer.put(0, delta);
 
-		this.writeCLBuffers();
-
-		// TODO: Separate this kernel into two parts: global gravity kernel, particle movement kernel
-		// if (doGlobalGravity) {
-		this.runKernel();
-		// }
-
-		this.readCLBuffers();
+		if (particles.size() > 0) {
+			this.writeCLBuffers();
+			this.runKernel();
+			this.readCLBuffers();
+		}
 
 		CL10.clFinish(queue);
 
@@ -408,35 +401,22 @@ public class World {
 	}
 
 	private void runKernel() {
-		globalGravityKernel.setGlobalWorkSize(0, particleCount);
-		globalGravityKernel.enqueueNDRangeKernel(queue, null, null);
+		// globalGravityKernel.setGlobalWorkSize(0, particles.size());
+		// globalGravityKernel.enqueueNDRangeKernel(queue, null, null);
 
 		CL10.clFinish(queue);
 
-		fluidDynamicsKernel.setGlobalWorkSize(0, particleCount);
+		fluidDynamicsKernel.setGlobalWorkSize(0, particles.size());
 		fluidDynamicsKernel.enqueueNDRangeKernel(queue, null, null);
-
-		// CL10.clEnqueueNDRangeKernel(queue, kernel, 1, kernel1DGlobalOffset, kernel1DGlobalWorkSize, null, null, null);
-
-		// int maxWorkSize = positionBuffer.capacity() / 2;
-		// for (int i = positionBuffer.capacity() / 2, j = 0; i > 0; i -= maxWorkSize, j += maxWorkSize) {
-		// kernel1DGlobalWorkSize.put(0, Math.min(i, maxWorkSize));
-		//
-		// kernel1DGlobalOffset.put(0, j);
-		// CL10.clEnqueueNDRangeKernel(queue, kernel, 1, kernel1DGlobalOffset, kernel1DGlobalWorkSize, null, null, null);
-		// }
 	}
 
 	private void readCLBuffers() {
-		// CL10.clEnqueueReadBuffer(queue, positionMem, 1, 0, positionBufferCL.getBuffer(), null, null);
-		// CL10.clEnqueueReadBuffer(queue, velocityMem, 1, 0, velocityBufferCL.getBuffer(), null, null);
-
 		positionBuffer.enqueueReadBuffer(queue, 1, 0, null, null);
 		velocityBuffer.enqueueReadBuffer(queue, 1, 0, null, null);
 
-		for (int i = 0; i < particleCount; i++) {
-			particles[i].position.set(positionBuffer.get(i * 2), positionBuffer.get(i * 2 + 1));
-			particles[i].velocity.set(velocityBuffer.get(i * 2), velocityBuffer.get(i * 2 + 1));
+		for (int i = 0; i < particles.size(); i++) {
+			particles.get(i).position.set(positionBuffer.get(i * 2), positionBuffer.get(i * 2 + 1));
+			particles.get(i).velocity.set(velocityBuffer.get(i * 2), velocityBuffer.get(i * 2 + 1));
 		}
 
 		positionBuffer.rewind();
@@ -452,15 +432,14 @@ public class World {
 			velocityBuffer.put(particle.velocity.getY());
 		}
 
+		particleCountBuffer.put(0, particles.size());
+
 		positionBuffer.rewind();
 		velocityBuffer.rewind();
 
 		positionBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
 		velocityBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
-
-		// CL10.clEnqueueWriteBuffer(queue, positionMem, 1, 0, positionBuffer, null, null);
-		// CL10.clEnqueueWriteBuffer(queue, velocityMem, 1, 0, velocityBuffer, null, null);
-		// CL10.clEnqueueWriteBuffer(queue, frameDeltaMem, 1, 0, frameDeltaBuffer, null, null);
+		particleCountBuffer.enqueueWriteBuffer(queue, 1, 0, null, null);
 	}
 
 	public void render() {
@@ -481,8 +460,10 @@ public class World {
 	}
 
 	private void renderParticleGlow() {
-		frameBuffer1.bindFrameBuffer();
 		GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		frameBuffer1.bindFrameBuffer();
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		this.prepareSceneRender();
@@ -491,14 +472,12 @@ public class World {
 
 		this.finishSceneRender();
 
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+
 		frameBuffer2.bindFrameBuffer();
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		blurShaderH.bindShader();
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-		// testShader.setUniform("uProjectionMatrix", camera.getProjectionMatrix());
-
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		// GL11.glDisable(GL11.GL_TEXTURE_2D);
 
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, frameBuffer1.getTextureID());
 		this.renderTexturedQuad();
@@ -507,11 +486,6 @@ public class World {
 		frameBuffer2.unbindCurrentFrameBuffer();
 
 		blurShaderV.bindShader();
-		// testShader.setUniform("uProjectionMatrix", camera.getProjectionMatrix());
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		// GL11.glDisable(GL11.GL_TEXTURE_2D);
 
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, frameBuffer2.getTextureID());
 		this.renderTexturedQuad();
@@ -544,17 +518,17 @@ public class World {
 		/****************************************
 		 * Particle rendering section
 		 */
-		FloatBuffer particleBuffer = ByteBuffer.allocateDirect(particleCount * Particle.SIZE_IN_BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		for (int i = 0; i < particleCount; i++) {
-			particleBuffer.put(particles[i].position.getX());
-			particleBuffer.put(particles[i].position.getY());
+		FloatBuffer particleBuffer = ByteBuffer.allocateDirect(particles.size() * Particle.SIZE_IN_BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
+		for (int i = 0; i < particles.size(); i++) {
+			particleBuffer.put(particles.get(i).position.getX());
+			particleBuffer.put(particles.get(i).position.getY());
 		}
 		particleBuffer.flip();
 
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, particleVBO);
-		GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, particleBuffer);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, particleBuffer, GL15.GL_DYNAMIC_DRAW);
 		GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 2 * 4, 0);
-		GL11.glDrawArrays(GL11.GL_POINTS, 0, particleCount);
+		GL11.glDrawArrays(GL11.GL_POINTS, 0, particles.size());
 	}
 
 	private void renderWalls() {
@@ -648,5 +622,11 @@ public class World {
 
 	public float getHeight() {
 		return halfHeight;
+	}
+
+	public void addParticle(Particle particle) {
+		if (particles.size() < maxParticleCount) {
+			this.particles.add(particle);
+		}
 	}
 }
