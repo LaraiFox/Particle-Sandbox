@@ -2,9 +2,9 @@ package net.laraifox.particlesandbox.physicstasks;
 
 import java.util.Random;
 
-import net.laraifox.particlesandbox.core.Particle;
 import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
+import net.laraifox.particlesandbox.objects.Particle;
 
 public class ParticleMovementTask implements IPhysicsTask {
 	private Random random;

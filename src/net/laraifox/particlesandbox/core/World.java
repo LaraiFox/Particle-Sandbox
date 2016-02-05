@@ -5,8 +5,26 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+
+import net.laraifox.particlesandbox.collision.AABBCollider;
+import net.laraifox.particlesandbox.collision.Quadtree;
+import net.laraifox.particlesandbox.interfaces.ICollidable;
+import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
+import net.laraifox.particlesandbox.objects.Particle;
+import net.laraifox.particlesandbox.objects.ParticleEmitter;
+import net.laraifox.particlesandbox.objects.Wall;
+import net.laraifox.particlesandbox.opencl.CLFloatBuffer;
+import net.laraifox.particlesandbox.opencl.CLIntBuffer;
+import net.laraifox.particlesandbox.opencl.Kernel;
+import net.laraifox.particlesandbox.physicstasks.CollisionThread;
+import net.laraifox.particlesandbox.physicstasks.EnvironmentCollisionTask;
+import net.laraifox.particlesandbox.physicstasks.GlobalGravityTask;
+import net.laraifox.particlesandbox.physicstasks.MouseForceTask;
+import net.laraifox.particlesandbox.physicstasks.PhysicsThread;
+import net.laraifox.particlesandbox.physicstasks.QuadtreeSetupTask;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -19,20 +37,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
-
-import net.laraifox.particlesandbox.collision.AABBCollider;
-import net.laraifox.particlesandbox.collision.Quadtree;
-import net.laraifox.particlesandbox.interfaces.ICollidable;
-import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
-import net.laraifox.particlesandbox.opencl.CLFloatBuffer;
-import net.laraifox.particlesandbox.opencl.CLIntBuffer;
-import net.laraifox.particlesandbox.opencl.Kernel;
-import net.laraifox.particlesandbox.physicstasks.CollisionThread;
-import net.laraifox.particlesandbox.physicstasks.EnvironmentCollisionTask;
-import net.laraifox.particlesandbox.physicstasks.GlobalGravityTask;
-import net.laraifox.particlesandbox.physicstasks.MouseForceTask;
-import net.laraifox.particlesandbox.physicstasks.PhysicsThread;
-import net.laraifox.particlesandbox.physicstasks.QuadtreeSetupTask;
 
 public class World {
 	public static final float GRAVITATIONAL_CONSTANT = 0.00006673f;
@@ -72,6 +76,8 @@ public class World {
 
 	private boolean doGlobalGravity;
 
+	private DeveloperHUD developerHUD;
+
 	// private int framebufferID;
 	// private int colorTextureID;
 
@@ -84,7 +90,7 @@ public class World {
 	public World(float width, float height, int particleCount, Random random) throws IOException, LWJGLException {
 		this.halfWidth = width * 1 / 2.0f;
 		this.halfHeight = height * 1 / 2.0f;
-		this.maxParticleCount = 100000;
+		this.maxParticleCount = 150000;
 		this.particleCount = particleCount;
 		this.random = random;
 
@@ -111,6 +117,8 @@ public class World {
 
 		this.mouseForceStrength = 60.0f;
 		this.mouseForceThreshold = 20.0f;
+
+		this.developerHUD = new DeveloperHUD();
 
 		FloatBuffer buffer = ByteBuffer.allocateDirect(4 * maxParticleCount * 2).order(ByteOrder.nativeOrder()).asFloatBuffer();
 		for (int i = 0; i < particleCount; i++) {
@@ -212,8 +220,17 @@ public class World {
 
 	private void resetParticles() {
 		particles.clear();
+
+		HashSet<Vector2f> usedLocations = new HashSet<Vector2f>();
 		for (int i = 0; i < particleCount; i++) {
-			this.addParticle(new Particle(halfWidth, halfHeight, random));
+			Vector2f position = null;
+			do {
+				position = new Vector2f((random.nextFloat() * 2.0f - 1.0f) * halfWidth, (random.nextFloat() * 2.0f - 1.0f) * halfHeight);
+			} while (usedLocations.contains(position));
+
+			usedLocations.add(position);
+
+			this.addParticle(new Particle(position, Vector2f.Zero()));
 		}
 	}
 
@@ -229,6 +246,8 @@ public class World {
 	 * 
 	 */
 	public void update(float delta) {
+		developerHUD.update();
+
 		if (InputHandler.isKeyPressed(InputHandler.KEY_R) && (InputHandler.isKeyDown(InputHandler.KEY_LCONTROL) || InputHandler.isKeyDown(InputHandler.KEY_RCONTROL))) {
 			this.resetParticles();
 		}
@@ -312,11 +331,11 @@ public class World {
 		}
 
 		if (InputHandler.isButtonDown(0) && !InputHandler.isButtonDown(1)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(),
-					InputHandler.getMouseY() + camera.getPosition().getY() - cameraSize.getY(), mouseForceStrength, mouseForceThreshold));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(), InputHandler.getMouseY() + camera.getPosition().getY()
+				- cameraSize.getY(), mouseForceStrength, mouseForceThreshold));
 		} else if (InputHandler.isButtonDown(1) && !InputHandler.isButtonDown(0)) {
-			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(),
-					InputHandler.getMouseY() + camera.getPosition().getY() - cameraSize.getY(), -mouseForceStrength, mouseForceThreshold));
+			physicsTasks.add(new MouseForceTask(InputHandler.getMouseX() + camera.getPosition().getX() - cameraSize.getX(), InputHandler.getMouseY() + camera.getPosition().getY()
+				- cameraSize.getY(), -mouseForceStrength, mouseForceThreshold));
 		}
 
 		if (walls.size() > 0) {

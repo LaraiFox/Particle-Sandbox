@@ -5,10 +5,10 @@ import java.util.ArrayList;
 
 import net.laraifox.particlesandbox.collision.Quadtree;
 import net.laraifox.particlesandbox.core.GameManager;
-import net.laraifox.particlesandbox.core.Particle;
 import net.laraifox.particlesandbox.core.Vector2f;
-import net.laraifox.particlesandbox.core.Wall;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
+import net.laraifox.particlesandbox.objects.Particle;
+import net.laraifox.particlesandbox.objects.Wall;
 
 public class CollisionThread extends Thread {
 	// public Object syncStartPhysicsObject;

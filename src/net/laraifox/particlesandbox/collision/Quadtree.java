@@ -66,18 +66,7 @@ public class Quadtree {
 				}
 			} else {
 				synchronized (childNodes) {
-					if (childNodes == null)
-						System.out.println();
-					else if (childNodes[0] == null)
-						System.out.println();
-					else if (childNodes[1] == null)
-						System.out.println();
-					else if (childNodes[2] == null)
-						System.out.println();
-					else if (childNodes[3] == null)
-						System.out.println();
 					return childNodes[index].insert(collidable, collider, colliderMin, colliderMax);
-
 				}
 			}
 

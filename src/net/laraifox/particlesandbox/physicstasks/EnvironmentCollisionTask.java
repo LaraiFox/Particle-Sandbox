@@ -3,10 +3,10 @@ package net.laraifox.particlesandbox.physicstasks;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 
-import net.laraifox.particlesandbox.core.Particle;
 import net.laraifox.particlesandbox.core.Vector2f;
-import net.laraifox.particlesandbox.core.Wall;
 import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
+import net.laraifox.particlesandbox.objects.Particle;
+import net.laraifox.particlesandbox.objects.Wall;
 
 public class EnvironmentCollisionTask implements IPhysicsTask {
 	private ArrayList<Wall> walls;

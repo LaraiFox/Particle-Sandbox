@@ -3,8 +3,8 @@ package net.laraifox.particlesandbox.physicstasks;
 import java.util.ArrayList;
 
 import net.laraifox.particlesandbox.core.GameManager;
-import net.laraifox.particlesandbox.core.Particle;
 import net.laraifox.particlesandbox.interfaces.IPhysicsTask;
+import net.laraifox.particlesandbox.objects.Particle;
 
 public class PhysicsThread extends Thread {
 	// public Object syncStartPhysicsObject;

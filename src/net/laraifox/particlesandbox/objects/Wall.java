@@ -1,8 +1,9 @@
-package net.laraifox.particlesandbox.core;
+package net.laraifox.particlesandbox.objects;
 
 import java.awt.geom.Line2D;
 
 import net.laraifox.particlesandbox.collision.AABBCollider;
+import net.laraifox.particlesandbox.core.Vector2f;
 import net.laraifox.particlesandbox.interfaces.ICollidable;
 import net.laraifox.particlesandbox.interfaces.ICollider;
 

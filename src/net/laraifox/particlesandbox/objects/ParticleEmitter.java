@@ -1,6 +1,10 @@
-package net.laraifox.particlesandbox.core;
+package net.laraifox.particlesandbox.objects;
 
 import java.util.Random;
+
+import net.laraifox.particlesandbox.core.Transform2D;
+import net.laraifox.particlesandbox.core.Vector2f;
+import net.laraifox.particlesandbox.core.World;
 
 public class ParticleEmitter {
 	private World world;
