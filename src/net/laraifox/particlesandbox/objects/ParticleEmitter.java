@@ -38,7 +38,7 @@ public class ParticleEmitter {
 			float speed = minSpeed + (maxSpeed - minSpeed) * random.nextFloat();
 			Vector2f velocity = Vector2f.rotate(Vector2f.PositiveX(), transform.getRotation()).scale(speed);
 
-			world.addParticle(new Particle(position, velocity));
+			world.addParticle(new Particle(position, velocity, random));
 		}
 	}
 }

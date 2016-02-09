@@ -7,9 +7,7 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.GL11;
 
 public class GameManager {
-	public static final int THREAD_COUNT = 8;
-
-	private final int PARTICLE_COUNT = (int) (1000 * 100.0);
+	public static final int THREAD_COUNT = 4;
 
 	private Random random;
 
@@ -19,7 +17,7 @@ public class GameManager {
 		this.random = new Random();
 
 		try {
-			this.world = new World(width, height, PARTICLE_COUNT, random);
+			this.world = new World(width, height, random);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(1);

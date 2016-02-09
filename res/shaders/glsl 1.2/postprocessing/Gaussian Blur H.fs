@@ -27,10 +27,10 @@ void main() {
 		// sum += texture2D(u_texture, vec2(tc.x + (i * hstep), tc.y)) * gaussian(i, 0, blur);
 	// }
 
-    sum += texture2D(u_texture, vec2(tc.x - 6.0*blur*hstep, tc.y)) * 0.0014594594;
-    sum += texture2D(u_texture, vec2(tc.x - 5.0*blur*hstep, tc.y)) * 0.0048648648;
-    sum += texture2D(u_texture, vec2(tc.x - 4.0*blur*hstep, tc.y)) * 0.0162162162;
-    sum += texture2D(u_texture, vec2(tc.x - 3.0*blur*hstep, tc.y)) * 0.0540540541;
+    // sum += texture2D(u_texture, vec2(tc.x - 6.0*blur*hstep, tc.y)) * 0.0014594594;
+    // sum += texture2D(u_texture, vec2(tc.x - 5.0*blur*hstep, tc.y)) * 0.0048648648;
+    // sum += texture2D(u_texture, vec2(tc.x - 4.0*blur*hstep, tc.y)) * 0.0162162162;
+    // sum += texture2D(u_texture, vec2(tc.x - 3.0*blur*hstep, tc.y)) * 0.0540540541;
     sum += texture2D(u_texture, vec2(tc.x - 2.0*blur*hstep, tc.y)) * 0.0716216216;
     sum += texture2D(u_texture, vec2(tc.x - 1.0*blur*hstep, tc.y)) * 0.1245945946;
 
@@ -38,10 +38,10 @@ void main() {
 
     sum += texture2D(u_texture, vec2(tc.x + 1.0*blur*hstep, tc.y)) * 0.1245945946;
     sum += texture2D(u_texture, vec2(tc.x + 2.0*blur*hstep, tc.y)) * 0.0716216216;
-    sum += texture2D(u_texture, vec2(tc.x + 3.0*blur*hstep, tc.y)) * 0.0540540541;
-    sum += texture2D(u_texture, vec2(tc.x + 4.0*blur*hstep, tc.y)) * 0.0162162162;
-    sum += texture2D(u_texture, vec2(tc.x + 5.0*blur*hstep, tc.y)) * 0.0048648648;
-    sum += texture2D(u_texture, vec2(tc.x + 6.0*blur*hstep, tc.y)) * 0.0014594594;
+    // sum += texture2D(u_texture, vec2(tc.x + 3.0*blur*hstep, tc.y)) * 0.0540540541;
+    // sum += texture2D(u_texture, vec2(tc.x + 4.0*blur*hstep, tc.y)) * 0.0162162162;
+    // sum += texture2D(u_texture, vec2(tc.x + 5.0*blur*hstep, tc.y)) * 0.0048648648;
+    // sum += texture2D(u_texture, vec2(tc.x + 6.0*blur*hstep, tc.y)) * 0.0014594594;
 
     gl_FragColor = vec4(sum.rgb * 3.0, 1.0);
 }

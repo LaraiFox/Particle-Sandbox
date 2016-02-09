@@ -11,7 +11,9 @@ import net.laraifox.particlesandbox.interfaces.ICollider;
 import net.laraifox.particlesandbox.interfaces.IRenderObject;
 
 public class Particle implements ICollidable, IRenderObject {
-	public static final int SIZE_IN_BYTES = 2 * 4;
+	public static final int PARTICLE_TRAIL_LENGTH = 2;
+
+	public static final int SIZE_IN_BYTES = Vector2f.VECTOR_SIZE + 0 * Float.BYTES;
 
 	public static final float PARTICLE_MASS = 100.0f;
 	public static final float PARTICLE_MIN_SPEED = 0.000663f;
@@ -22,18 +24,22 @@ public class Particle implements ICollidable, IRenderObject {
 	public Vector2f position;
 	public Vector2f velocity;
 
+	public float[] color;
+
 	private Line2D.Float line;
 
-	public Particle(Vector2f position, Vector2f velocity) {
+	public Particle(float width, float height, Random random) {
+		this(new Vector2f((random.nextFloat() * 2.0f - 1.0f) * width, (random.nextFloat() * 2.0f - 1.0f) * height), new Vector2f((random.nextFloat() - 0.5f) * 0.0f, (random
+				.nextFloat() - 0.5f) * 0.0f), random);
+	}
+
+	public Particle(Vector2f position, Vector2f velocity, Random random) {
 		this.position = position;
 		this.velocity = velocity;
 
-		this.line = new Line2D.Float(position.getX(), position.getY(), position.getX() + velocity.getX(), position.getY() + velocity.getY());
-	}
-
-	public Particle(float width, float height, Random random) {
-		this.position = new Vector2f((random.nextFloat() * 2.0f - 1.0f) * width, (random.nextFloat() * 2.0f - 1.0f) * height);
-		this.velocity = new Vector2f((random.nextFloat() - 0.5f) * 0.0f, (random.nextFloat() - 0.5f) * 0.0f);
+		this.color = new float[] {
+				random.nextFloat(), random.nextFloat(), random.nextFloat()
+		};
 
 		this.line = new Line2D.Float(position.getX(), position.getY(), position.getX() + velocity.getX(), position.getY() + velocity.getY());
 	}

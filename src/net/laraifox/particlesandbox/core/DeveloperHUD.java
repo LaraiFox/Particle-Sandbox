@@ -2,11 +2,11 @@ package net.laraifox.particlesandbox.core;
 
 public class DeveloperHUD {
 	private enum EnumDeveloperHUDState {
-		None, Help, Settings, Performance;
+		NONE, HELP, SETTINGS, PERFORMANCE;
 
 		public static EnumDeveloperHUDState checkState(EnumDeveloperHUDState currentState, EnumDeveloperHUDState otherState) {
 			if (currentState == otherState) {
-				return EnumDeveloperHUDState.None;
+				return EnumDeveloperHUDState.NONE;
 			}
 
 			return otherState;
@@ -16,28 +16,28 @@ public class DeveloperHUD {
 	private EnumDeveloperHUDState currentState;
 
 	public DeveloperHUD() {
-		this.currentState = EnumDeveloperHUDState.None;
+		this.currentState = EnumDeveloperHUDState.NONE;
 	}
 
 	public void update() {
 		if (InputHandler.isKeyPressed(InputHandler.KEY_F1)) {
-			currentState = EnumDeveloperHUDState.checkState(currentState, EnumDeveloperHUDState.Help);
+			currentState = EnumDeveloperHUDState.checkState(currentState, EnumDeveloperHUDState.HELP);
 		} else if (InputHandler.isKeyPressed(InputHandler.KEY_F2)) {
-			currentState = EnumDeveloperHUDState.checkState(currentState, EnumDeveloperHUDState.Settings);
+			currentState = EnumDeveloperHUDState.checkState(currentState, EnumDeveloperHUDState.SETTINGS);
 		} else if (InputHandler.isKeyPressed(InputHandler.KEY_F3)) {
-			currentState = EnumDeveloperHUDState.checkState(currentState, EnumDeveloperHUDState.Performance);
+			currentState = EnumDeveloperHUDState.checkState(currentState, EnumDeveloperHUDState.PERFORMANCE);
 		}
 	}
 
 	public void render() {
 		switch (currentState) {
-		case Help:
+		case HELP:
 
 			break;
-		case Settings:
+		case SETTINGS:
 
 			break;
-		case Performance:
+		case PERFORMANCE:
 
 			break;
 		default:

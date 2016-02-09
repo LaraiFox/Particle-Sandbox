@@ -28,15 +28,15 @@ public class ProgramDisplay {
 
 	private GameManager gameManager;
 
-	public ProgramDisplay(String title, float width, float height, boolean fullscreen, boolean vSync) {
+	public ProgramDisplay(String title) {
 		this.title = title;
-		this.width = width;
-		this.height = height;
-		this.isFullscreen = fullscreen;
-		this.isResizable = false;
-		this.isVSyncEnabled = vSync;
+		this.width = Configuration.getFloat(EnumConfigKey.DISPLAY_WIDTH);
+		this.height = Configuration.getFloat(EnumConfigKey.DISPLAY_HEIGHT);
+		this.isFullscreen = Configuration.getBoolean(EnumConfigKey.DISPLAY_FULLSCREEN);;
+		this.isResizable = true;
+		this.isVSyncEnabled = Configuration.getBoolean(EnumConfigKey.DISPLAY_VSYNC);;
 
-		this.pixelFormat = new PixelFormat(8, 8, 1, 1, 8, 0, 8, 8, false);
+		this.pixelFormat = new PixelFormat(8, 8, 1, 1, 16, 0, 8, 8, false);
 		this.contextAttribs = new ContextAttribs();
 
 		this.isInitialized = false;
@@ -70,11 +70,62 @@ public class ProgramDisplay {
 
 	private void initializeDisplay() throws LWJGLException {
 		Display.setTitle(title);
-		Display.setDisplayMode((new DisplayMode((int) width, (int) height)));
-		Display.setFullscreen(isFullscreen);
+		// Display.setDisplayMode((new DisplayMode((int) width, (int) height)));
+		// Display.setFullscreen(true);
+		this.setDisplayMode((int) width, (int) height, isFullscreen);
 		Display.setResizable(isResizable);
-		Display.setVSyncEnabled(isVSyncEnabled);
+		Display.setVSyncEnabled(true);
 		Display.create(pixelFormat, contextAttribs);
+	}
+
+	private void setDisplayMode(int width, int height, boolean fullscreen) {
+		// return if requested DisplayMode is already set
+		if ((Display.getDisplayMode().getWidth() == width) && (Display.getDisplayMode().getHeight() == height) && (Display.isFullscreen() == fullscreen)) {
+			return;
+		}
+
+		try {
+			DisplayMode targetDisplayMode = null;
+
+			if (fullscreen) {
+				DisplayMode[] modes = Display.getAvailableDisplayModes();
+				int freq = 0;
+
+				for (int i = 0; i < modes.length; i++) {
+					DisplayMode current = modes[i];
+
+					if ((current.getWidth() == width) && (current.getHeight() == height)) {
+						if ((targetDisplayMode == null) || (current.getFrequency() >= freq)) {
+							if ((targetDisplayMode == null) || (current.getBitsPerPixel() > targetDisplayMode.getBitsPerPixel())) {
+								targetDisplayMode = current;
+								freq = targetDisplayMode.getFrequency();
+							}
+						}
+
+						// if we've found a match for bpp and frequence against the
+						// original display mode then it's probably best to go for this one
+						// since it's most likely compatible with the monitor
+						if ((current.getBitsPerPixel() == Display.getDesktopDisplayMode().getBitsPerPixel())
+							&& (current.getFrequency() == Display.getDesktopDisplayMode().getFrequency())) {
+							targetDisplayMode = current;
+							break;
+						}
+					}
+				}
+			} else {
+				targetDisplayMode = new DisplayMode(width, height);
+			}
+
+			if (targetDisplayMode == null) {
+				System.out.println("Failed to find value mode: " + width + "x" + height + " fs=" + fullscreen);
+				return;
+			}
+
+			Display.setDisplayMode(targetDisplayMode);
+			Display.setFullscreen(fullscreen);
+		} catch (LWJGLException e) {
+			System.out.println("Unable to setup mode " + width + "x" + height + " fullscreen=" + fullscreen + e);
+		}
 	}
 
 	private void initializeOpenGL() {

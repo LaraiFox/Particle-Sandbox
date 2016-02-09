@@ -21,7 +21,7 @@ public class FrameBuffer {
 
 		this.width = width;
 		this.height = height;
-		unbindCurrentFrameBuffer();
+		unbindFrameBuffer();
 	}
 
 	public void cleanUp() {
@@ -30,7 +30,7 @@ public class FrameBuffer {
 		GL30.glDeleteRenderbuffers(depthBufferID);
 	}
 
-	public void unbindCurrentFrameBuffer() {
+	public static void unbindFrameBuffer() {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 		GL11.glViewport(0, 0, Display.getWidth(), Display.getHeight());
 	}
