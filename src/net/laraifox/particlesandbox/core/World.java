@@ -474,9 +474,9 @@ public class World {
 			this.writeCLBuffers();
 			this.runKernel();
 			this.readCLBuffers();
-		}
 
-		CL10.clFinish(queue);
+			CL10.clFinish(queue);
+		}
 
 		for (GravityWell gravityWell : gravityWells) {
 			gravityWell.position.add(gravityWell.velocity);
@@ -495,6 +495,7 @@ public class World {
 		// } catch (InterruptedException e) {
 		// e.printStackTrace();
 		// }
+		System.err.println("UPDATE!");
 	}
 
 	private void quadtreeCollisionDetection() {
@@ -613,6 +614,8 @@ public class World {
 	}
 
 	public void render() {
+		System.err.println("RENDER!");
+		
 		basicShader.setUniform("uViewPojectionMatrix", camera.getViewProjectionMatrix());
 
 		GL11.glEnable(GL11.GL_BLEND);
@@ -730,7 +733,7 @@ public class World {
 		 * Particle rendering section
 		 */
 		// TODO: Consider using a framebuffer array to render particle trails... May be more efficient for greater particle counts than storing positions.
-		if (renderParticleTrails) {
+		if (renderParticleTrails && particleTrailFBOs.length > 0) {
 			GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
@@ -818,7 +821,6 @@ public class World {
 		// GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 2 * 4, 0);
 		// GL11.glDrawArrays(GL11.GL_POINTS, 0, particles.size());
 		// }
-
 	}
 
 	private void renderWalls() {
