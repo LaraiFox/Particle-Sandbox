@@ -36,7 +36,11 @@ public class ProgramDisplay {
 		this.isResizable = Configuration.getBoolean(EnumConfigKey.DISPLAY_RESIZABLE);
 		this.isVSyncEnabled = Configuration.getBoolean(EnumConfigKey.DISPLAY_VSYNC);
 
+<<<<<<< HEAD
 		this.pixelFormat = new PixelFormat().withSamples(8);
+=======
+		this.pixelFormat = new PixelFormat(8, 8, 1, 1, 8, 0, 8, 8, false);
+>>>>>>> 1e4336fbcc99d1113f1815939ad9cf91fcfffec3
 		this.contextAttribs = new ContextAttribs();
 
 		this.isInitialized = false;

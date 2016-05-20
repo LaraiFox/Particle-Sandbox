@@ -6,13 +6,6 @@ varying vec2 vTexCoord;
 
 uniform sampler2D u_texture;
 
-float gaussian(float x, float b, float c) {
-	float top = (x - b) * (x - b);
-	float bot = (c * c) * 2.0;
-
-	return (1.0 / (c * sqrt(2.0 * M_PI))) * exp(-(top / bot));
-}
-
 void main() {
     vec4 sum = vec4(0.0);
 
@@ -22,10 +15,6 @@ void main() {
     float width = 2.0 * blur + 1; 
 
     float hstep = 0.00078125;
-	
-	// for (int i = -blur; i <= blur; i++) {
-		// sum += texture2D(u_texture, vec2(tc.x + (i * hstep), tc.y)) * gaussian(i, 0, blur);
-	// }
 
     // sum += texture2D(u_texture, vec2(tc.x - 6.0*blur*hstep, tc.y)) * 0.0014594594;
     // sum += texture2D(u_texture, vec2(tc.x - 5.0*blur*hstep, tc.y)) * 0.0048648648;
