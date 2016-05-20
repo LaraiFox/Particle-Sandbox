@@ -86,9 +86,14 @@ public class ParticleSandboxBoot {
 				System.out.println("-f                 - Changes the window mode to fullscreen if supported.");
 				System.out.println("-h <number>        - Specifies the desired window height.");
 				System.out.println("-help              - Prints all command line arguments available.");
+				System.out.println("-noborder          - If the display is not fullscreen it will be windowed borderless.");
 				System.out.println("-v                 - Sets the window to use v-sync.");
 				System.out.println("-w <number>        - Specifies the desired window width.");
 				System.exit(0);
+			case "-noborder":
+				System.setProperty("org.lwjgl.opengl.Window.undecorated", "true");
+				Configuration.setValue(EnumConfigKey.DISPLAY_RESIZABLE, "false");
+				break;
 			default:
 				break;
 			}
@@ -109,11 +114,9 @@ public class ParticleSandboxBoot {
 			for (int deviceIndex = 0; deviceIndex < devices.size(); deviceIndex++) {
 				CLDevice device = devices.get(deviceIndex);
 
-				System.out.printf(Locale.ENGLISH, "  Device #%d(%s): %s\n", deviceIndex, getDeviceType(device.getInfoInt(CL10.CL_DEVICE_TYPE)), device.getInfoString(
-						CL10.CL_DEVICE_NAME));
+				System.out.printf(Locale.ENGLISH, "  Device #%d(%s): %s\n", deviceIndex, getDeviceType(device.getInfoInt(CL10.CL_DEVICE_TYPE)), device.getInfoString(CL10.CL_DEVICE_NAME));
 
-				System.out.printf(Locale.ENGLISH, "Compute Units:  %d @ %d MHz\n", device.getInfoInt(CL10.CL_DEVICE_MAX_COMPUTE_UNITS), device.getInfoInt(
-						CL10.CL_DEVICE_MAX_CLOCK_FREQUENCY));
+				System.out.printf(Locale.ENGLISH, "Compute Units:  %d @ %d MHz\n", device.getInfoInt(CL10.CL_DEVICE_MAX_COMPUTE_UNITS), device.getInfoInt(CL10.CL_DEVICE_MAX_CLOCK_FREQUENCY));
 
 				System.out.printf(Locale.ENGLISH, "Max Work Group: %d \n", device.getInfoInt(CL10.CL_DEVICE_MAX_WORK_GROUP_SIZE));
 

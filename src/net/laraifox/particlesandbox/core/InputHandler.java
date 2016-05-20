@@ -136,6 +136,28 @@ public class InputHandler {
 	public static final int KEY_POWER = 0xDE;
 	public static final int KEY_SLEEP = 0xDF;
 
+	public static final int MOUSE_LEFT = 0;
+	public static final int MOUSE_RIGHT = 1;
+	public static final int MOUSE_MIDDLE = 2;
+	public static final int MOUSE_BACK = 3;
+	public static final int MOUSE_FORWARD = 4;
+	public static final int MOUSE_1 = 0;
+	public static final int MOUSE_2 = 1;
+	public static final int MOUSE_3 = 2;
+	public static final int MOUSE_4 = 3;
+	public static final int MOUSE_5 = 4;
+	public static final int MOUSE_6 = 5;
+	public static final int MOUSE_7 = 6;
+	public static final int MOUSE_8 = 7;
+	public static final int MOUSE_9 = 8;
+	public static final int MOUSE_10 = 9;
+	public static final int MOUSE_11 = 10;
+	public static final int MOUSE_12 = 11;
+	public static final int MOUSE_13 = 12;
+	public static final int MOUSE_14 = 13;
+	public static final int MOUSE_15 = 14;
+	public static final int MOUSE_16 = 15;
+
 	public static final int KEYCODE_COUNT = 256;
 	public static final int MOUSEBUTTON_COUNT = 16;
 

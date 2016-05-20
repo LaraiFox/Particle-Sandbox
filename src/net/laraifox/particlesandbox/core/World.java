@@ -495,7 +495,7 @@ public class World {
 		// } catch (InterruptedException e) {
 		// e.printStackTrace();
 		// }
-		System.err.println("UPDATE!");
+//		System.err.println("UPDATE!");
 	}
 
 	private void quadtreeCollisionDetection() {
@@ -614,7 +614,7 @@ public class World {
 	}
 
 	public void render() {
-		System.err.println("RENDER!");
+//		System.err.println("RENDER!");
 		
 		basicShader.setUniform("uViewPojectionMatrix", camera.getViewProjectionMatrix());
 

@@ -4,6 +4,7 @@ public enum EnumConfigKey {
 	DISPLAY_WIDTH("1280"),
 	DISPLAY_HEIGHT("720"),
 	DISPLAY_FULLSCREEN("false"),
+	DISPLAY_RESIZABLE("false"),
 	DISPLAY_VSYNC("false"),
 
 	WORLD_WIDTH("3200"),

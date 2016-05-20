@@ -32,11 +32,11 @@ public class ProgramDisplay {
 		this.title = title;
 		this.width = Configuration.getFloat(EnumConfigKey.DISPLAY_WIDTH);
 		this.height = Configuration.getFloat(EnumConfigKey.DISPLAY_HEIGHT);
-		this.isFullscreen = Configuration.getBoolean(EnumConfigKey.DISPLAY_FULLSCREEN);;
-		this.isResizable = true;
-		this.isVSyncEnabled = Configuration.getBoolean(EnumConfigKey.DISPLAY_VSYNC);;
+		this.isFullscreen = Configuration.getBoolean(EnumConfigKey.DISPLAY_FULLSCREEN);
+		this.isResizable = Configuration.getBoolean(EnumConfigKey.DISPLAY_RESIZABLE);
+		this.isVSyncEnabled = Configuration.getBoolean(EnumConfigKey.DISPLAY_VSYNC);
 
-		this.pixelFormat = new PixelFormat(8, 8, 1, 1, 16, 0, 8, 8, false);
+		this.pixelFormat = new PixelFormat().withSamples(8);
 		this.contextAttribs = new ContextAttribs();
 
 		this.isInitialized = false;
