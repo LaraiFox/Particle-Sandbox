@@ -165,8 +165,8 @@ public class World {
 		this.textureBasicShader = new Shader("res/shaders/glsl 1.2/Texture Basic.vs", "res/shaders/glsl 1.2/Texture Basic.fs", true);
 
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		this.frameBuffer1 = new FrameBuffer((int) width, (int) height);
-		this.frameBuffer2 = new FrameBuffer((int) width, (int) height);
+		this.frameBuffer1 = new FrameBuffer((int) (width / 1.5f), (int) (height / 1.5f));
+		this.frameBuffer2 = new FrameBuffer((int) (width / 1.5f), (int) (height / 1.5f));
 		try {
 			this.blurShaderH = new Shader("res/shaders/glsl 1.2/postprocessing/Gaussian Blur.vs", "res/shaders/glsl 1.2/postprocessing/Gaussian Blur H.fs", true);
 			this.blurShaderV = new Shader("res/shaders/glsl 1.2/postprocessing/Gaussian Blur.vs", "res/shaders/glsl 1.2/postprocessing/Gaussian Blur V.fs", true);
@@ -919,7 +919,7 @@ public class World {
 
 	public void addParticle(Particle particle) {
 		if (particles.size() < maxParticleCount) {
-			this.particles.add(particle);
+			particles.add(particle);
 		}
 	}
 }
